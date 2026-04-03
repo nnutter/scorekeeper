@@ -1,0 +1,11 @@
+[tools]
+go = "latest"
+"go:github.com/air-verse/air" = "latest"
+
+[tasks.serve]
+description = "Start the scorekeeper server"
+run = "go run ."
+
+[tasks.dev]
+description = "Start the server with live rebuilds"
+run = "air -c .air.toml"

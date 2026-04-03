@@ -1,0 +1,17 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/scorekeeper ."
+bin = "./tmp/scorekeeper"
+delay = 300
+exclude_dir = [".git", "tmp"]
+exclude_regex = ["_test\\.go"]
+include_ext = ["go", "tpl", "tmpl", "html", "css", "js", "toml"]
+stop_on_error = true
+
+[log]
+time = true
+
+[screen]
+clear_on_rebuild = true
