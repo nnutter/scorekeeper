@@ -7,13 +7,11 @@ import (
 	"os/exec"
 
 	"github.com/maxence-charriere/go-app/v10/pkg/app"
-	"github.com/nnutter/scorekeeper/ui"
+	"github.com/nnutter/scorekeeper/site"
 )
 
 func main() {
-	app.Route("/", func() app.Composer {
-		return ui.New()
-	})
+	site.RegisterRoutes()
 	app.RunWhenOnBrowser()
 	if app.IsClient {
 		return
@@ -23,14 +21,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	h := &app.Handler{
-		Name:        "Scorekeeper",
-		Description: "Baseball scorekeeping with simplified Retrosheet export",
-		Resources:   app.LocalDir("."),
-		RawHeaders: []string{
-			"<style>" + ui.CSS() + "</style>",
-		},
-	}
+	h := site.NewHandler(app.LocalDir("."))
 
 	addr := os.Getenv("PORT")
 	if addr == "" {
