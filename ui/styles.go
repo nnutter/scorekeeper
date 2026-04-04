@@ -42,6 +42,12 @@ button, input, textarea {
 .main-stack {
   margin-top: 0;
 }
+.event-layout {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
 .panel {
   padding: 8px 10px;
   border: 1px solid var(--line);
@@ -61,7 +67,7 @@ button, input, textarea {
 .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .game-info-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 180px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 144px minmax(0, 1fr);
   gap: 6px;
   align-items: end;
 }
@@ -73,6 +79,8 @@ button, input, textarea {
 }
 .game-info-actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   justify-content: flex-end;
 }
 .context-row {
@@ -80,6 +88,9 @@ button, input, textarea {
   grid-template-columns: 130px minmax(0, 1fr) 140px;
   gap: 6px;
   align-items: end;
+}
+.context-panel {
+  align-self: start;
 }
 .combined-grid {
   grid-template-columns: 0.95fr 0.9fr 1.1fr 1fr 1.1fr;
@@ -145,11 +156,21 @@ button, input, textarea {
   padding-top: 6px;
   padding-bottom: 6px;
 }
-.action-field label {
+.action-field label, .context-actions label {
   visibility: hidden;
 }
 .full-width {
   width: 100%;
+}
+.context-action-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.context-step {
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
 }
 .keyboard-group {
   display: grid;
@@ -158,6 +179,11 @@ button, input, textarea {
   border-radius: 12px;
   border: 1px solid var(--line);
   background: rgba(255, 251, 244, 0.82);
+}
+.keyboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 .keyboard-row {
   gap: 6px;
@@ -168,10 +194,14 @@ button, input, textarea {
   z-index: 20;
 }
 .token {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 40px;
-  min-height: 32px;
+  height: 32px;
   padding: 5px 8px;
   text-align: center;
+  white-space: nowrap;
 }
 .notice {
   padding: 4px 8px;
@@ -245,9 +275,29 @@ button, input, textarea {
   white-space: pre-wrap;
 }
 .export-details summary {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
   cursor: pointer;
   color: var(--accent);
   font-size: 0.9rem;
+}
+.export-details summary::-webkit-details-marker {
+  display: none;
+}
+.export-details summary::marker {
+  content: "";
+}
+.export-details summary::after {
+  content: "v";
+  font-size: 0.82rem;
+}
+.export-details:not([open]) summary::after {
+  content: "<";
+}
+.game-info-row + .export-details {
+  margin-top: 8px;
 }
 @media (max-width: 900px) {
   .combined-grid {
@@ -259,7 +309,7 @@ button, input, textarea {
 }
 @media (max-width: 1100px) {
   .page {
-    padding-bottom: 230px;
+    padding-bottom: 520px;
   }
   .keyboard-panel {
     position: fixed;
@@ -283,9 +333,15 @@ button, input, textarea {
 @media (max-width: 720px) {
   .page {
     padding: 10px;
-    padding-bottom: 280px;
+    padding-bottom: 780px;
+  }
+  .event-layout {
+    grid-template-columns: 1fr;
   }
   .grid.two, .grid.three, .combined-grid, .game-info-grid, .context-row, .game-info-row { grid-template-columns: 1fr; }
+  .keyboard-grid {
+    grid-template-columns: 1fr;
+  }
   .log-row {
     grid-template-columns: 44px 44px 56px 64px minmax(0, 1fr) 80px 88px;
     font-size: 0.82rem;

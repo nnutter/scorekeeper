@@ -7,7 +7,8 @@ var PitchTokenRows = [][]string{
 
 var BatterTokenRows = [][]string{
 	{"S", "D", "T", "HR", "DGR", "K", "W", "IW", "HP", "E", "FC", "FLE", "NP"},
-	{"SF", "SH", "GDP", "LDP", "FO", "G", "L", "P", "F", ".", ";", "/"},
+	{"SF", "SH", "GDP", "LDP", "FO", "G", "L", "P", "F", "1", "2", "3", "4", "5"},
+	{"6", "7", "8", "9", "(", ")", ".", ";", "/"},
 }
 
 var AdvanceTokenRows = [][]string{

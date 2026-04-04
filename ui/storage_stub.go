@@ -13,3 +13,5 @@ func saveBook(_ string) error {
 func copyText(_ string) error {
 	return nil
 }
+
+func clearEntryFields(_, _ bool) {}

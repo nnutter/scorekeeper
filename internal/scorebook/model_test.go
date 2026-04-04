@@ -16,6 +16,69 @@ func TestAdvanceHalf(t *testing.T) {
 	}
 }
 
+func TestRetreatHalf(t *testing.T) {
+	book := NewBook()
+
+	book.RetreatHalf()
+	if book.Context.Inning != 1 || book.Context.Half != Top {
+		t.Fatalf("retreat from start = inning %d half %s, want inning 1 top", book.Context.Inning, book.Context.Half)
+	}
+
+	book.AdvanceHalf()
+	book.RetreatHalf()
+	if book.Context.Inning != 1 || book.Context.Half != Top {
+		t.Fatalf("retreat from inning 1 bottom = inning %d half %s, want inning 1 top", book.Context.Inning, book.Context.Half)
+	}
+
+	book.AdvanceHalf()
+	book.AdvanceHalf()
+	book.RetreatHalf()
+	if book.Context.Inning != 1 || book.Context.Half != Bottom {
+		t.Fatalf("retreat from inning 2 top = inning %d half %s, want inning 1 bottom", book.Context.Inning, book.Context.Half)
+	}
+}
+
+func TestHalfSwitchRestoresRememberedPitchers(t *testing.T) {
+	book := NewBook()
+	book.Context.Pitcher = "H1"
+
+	book.AdvanceHalf()
+	if book.Context.Pitcher != "" {
+		t.Fatalf("advance to bottom pitcher = %q, want empty", book.Context.Pitcher)
+	}
+
+	book.Context.Pitcher = "A1"
+	book.AdvanceHalf()
+	if book.Context.Inning != 2 || book.Context.Half != Top || book.Context.Pitcher != "H1" {
+		t.Fatalf("advance to inning 2 top = inning %d half %s pitcher %q, want inning 2 top pitcher H1", book.Context.Inning, book.Context.Half, book.Context.Pitcher)
+	}
+
+	book.RetreatHalf()
+	if book.Context.Inning != 1 || book.Context.Half != Bottom || book.Context.Pitcher != "A1" {
+		t.Fatalf("retreat to inning 1 bottom = inning %d half %s pitcher %q, want inning 1 bottom pitcher A1", book.Context.Inning, book.Context.Half, book.Context.Pitcher)
+	}
+}
+
+func TestHydratePitcherMemory(t *testing.T) {
+	book := Book{
+		Context: GameContext{Inning: 3, Half: Bottom, Pitcher: "A2"},
+		Entries: []EventEntry{
+			{Inning: 1, Half: Top, Pitcher: "H1"},
+			{Inning: 1, Half: Bottom, Pitcher: "A1"},
+			{Inning: 2, Half: Top, Pitcher: "H2"},
+		},
+	}
+
+	book.HydratePitcherMemory()
+
+	if book.TopPitcher != "H2" {
+		t.Fatalf("top pitcher memory = %q, want H2", book.TopPitcher)
+	}
+	if book.BottomPitcher != "A2" {
+		t.Fatalf("bottom pitcher memory = %q, want A2", book.BottomPitcher)
+	}
+}
+
 func TestEventDraftToEntryTrimsValues(t *testing.T) {
 	draft := EventDraft{
 		Batter:      " 12J ",

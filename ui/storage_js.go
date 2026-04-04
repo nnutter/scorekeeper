@@ -42,3 +42,28 @@ func copyText(raw string) error {
 	clipboard.Call("writeText", raw)
 	return nil
 }
+
+func clearEntryFields(keepBatter, keepPitches bool) {
+	document := js.Global().Get("document")
+	if document.IsUndefined() || document.IsNull() {
+		return
+	}
+	selectors := []string{
+		`input[id^="batter-event-"]`,
+		`input[id^="advances-"]`,
+		`input[id^="runner-event-"]`,
+		`textarea[id^="note-"]`,
+	}
+	if !keepBatter {
+		selectors = append(selectors, `input[id^="batter-"]`)
+	}
+	if !keepPitches {
+		selectors = append(selectors, `input[id^="pitches-"]`)
+	}
+	for _, selector := range selectors {
+		nodes := document.Call("querySelectorAll", selector)
+		for i := 0; i < nodes.Length(); i++ {
+			nodes.Index(i).Set("value", "")
+		}
+	}
+}

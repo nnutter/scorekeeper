@@ -43,17 +43,19 @@ func (r *Root) Render() app.UI {
 
 	return app.Div().Class("page").Body(
 		app.Div().Class("stack main-stack").Body(
-			r.renderGameInfo(),
+			r.renderGameInfo(exportText),
 			r.renderLog(),
-			r.renderContext(),
-			r.renderEntry(),
+			app.Div().Class("event-layout").Body(
+				r.renderContext(),
+				r.renderEntry(),
+			),
 			r.renderKeyboard(),
-			r.renderExport(exportText),
 		),
 	)
 }
 
-func (r *Root) renderGameInfo() app.UI {
+
+func (r *Root) renderGameInfo(exportText string) app.UI {
 	return app.Section().Class("panel").Body(
 		app.Div().Class("game-info-row").Body(
 			app.Div().Class("game-info-grid").Body(
@@ -68,23 +70,32 @@ func (r *Root) renderGameInfo() app.UI {
 			),
 			app.Div().Class("game-info-actions").Body(
 				app.Button().Class("btn").Text("New Game").OnClick(r.newGame),
+				app.Button().Class("btn primary").Text("Copy").OnClick(r.copyExport),
+				app.A().Class("btn").Href(scorebook.MailtoLink(r.book)).Text("Email"),
 			),
+		),
+		app.Details().Class("export-details").Body(
+			app.Summary().Class("export-summary").Text("Show Preview"),
+			app.Pre().Class("panel export-box").Text(exportText),
 		),
 	)
 }
 
 func (r *Root) renderContext() app.UI {
-	return app.Section().Class("panel").Body(
-		app.Div().Class("context-row").Body(
+	return app.Section().Class("panel context-panel").Body(
+		app.Div().Class("stack").Body(
+			app.Div().Class("field context-actions").Body(
+				app.Label().Text(" "),
+				app.Div().Class("context-action-row").Body(
+					app.Button().Class("btn warm context-step").Text("-").OnClick(r.retreatHalf),
+					app.Button().Class("btn warm context-step").Text("+").OnClick(r.advanceHalf),
+				),
+			),
 			app.Div().Class("context-chip compact").Body(
 				app.Span().Class("mini-label").Text("Context"),
 				app.Strong().Text(fmt.Sprintf("%d %s", r.book.Context.Inning, strings.Title(string(r.book.Context.Half)))),
 			),
 			r.textField("Pitcher", &r.book.Context.Pitcher, "pitcher", "e.g. 45S"),
-			app.Div().Class("field action-field").Body(
-				app.Label().Text(" "),
-				app.Button().Class("btn warm full-width").Text("Advance Half").OnClick(r.advanceHalf),
-			),
 		),
 	)
 }
@@ -132,18 +143,14 @@ func (r *Root) renderEntryFields() []app.UI {
 }
 
 func (r *Root) renderKeyboard() app.UI {
-	groups := []app.UI{
-		r.renderTokenGroup(scorebook.PitchTokenRows, "pitches"),
-	}
-	groups = append(groups,
-		r.renderTokenGroup(scorebook.BatterTokenRows, "batter-event"),
-		r.renderTokenGroup(scorebook.AdvanceTokenRows, "advances"),
-		r.renderTokenGroup(scorebook.RunnerTokenRows, "runner-event"),
-	)
-
 	return app.Section().Class("panel keyboard-panel").Body(
 		app.P().Class("meta-line").Text(r.keyboardHelpText()),
-		app.Div().Class("stack").Body(groups...),
+		app.Div().Class("keyboard-grid").Body(
+			r.renderTokenGroup(scorebook.PitchTokenRows, "pitches"),
+			r.renderTokenGroup(scorebook.BatterTokenRows, "batter-event"),
+			r.renderTokenGroup(scorebook.RunnerTokenRows, "runner-event"),
+			r.renderTokenGroup(scorebook.AdvanceTokenRows, "advances"),
+		),
 	)
 }
 
@@ -203,19 +210,6 @@ func (r *Root) renderLogEntry(entry scorebook.EventEntry) app.UI {
 	)
 }
 
-func (r *Root) renderExport(exportText string) app.UI {
-	return app.Section().Class("panel").Body(
-		app.Div().Class("actions-row").Body(
-			app.Button().Class("btn primary").Text("Copy Export").OnClick(r.copyExport),
-			app.A().Class("btn").Href(scorebook.MailtoLink(r.book)).Text("Email Export"),
-		),
-		app.Details().Class("export-details").Body(
-			app.Summary().Text("Show Export Preview"),
-			app.Pre().Class("panel export-box").Text(exportText),
-		),
-	)
-}
-
 func (r *Root) textField(label string, target *string, focusKey, placeholder string) app.UI {
 	return app.Div().Class("field").Body(
 		app.Label().Class("field-label").Text(label),
@@ -237,6 +231,9 @@ func (r *Root) textAreaField(label string, target *string, focusKey, placeholder
 func (r *Root) bindString(target *string, focusKey string) app.EventHandler {
 	return func(ctx app.Context, e app.Event) {
 		*target = ctx.JSSrc().Get("value").String()
+		if focusKey == "pitcher" {
+			r.book.SyncPitcherMemory()
+		}
 		r.focused = focusKey
 		if r.messageKind == "error" {
 			r.clearMessage()
@@ -255,7 +252,14 @@ func (r *Root) setFocus(focusKey string) app.EventHandler {
 
 func (r *Root) advanceHalf(ctx app.Context, _ app.Event) {
 	r.book.AdvanceHalf()
-	r.book.Context.Pitcher = ""
+	r.clearMessage()
+	r.formVersion++
+	r.persist()
+	ctx.Reload()
+}
+
+func (r *Root) retreatHalf(ctx app.Context, _ app.Event) {
+	r.book.RetreatHalf()
 	r.clearMessage()
 	r.formVersion++
 	r.persist()
@@ -271,6 +275,7 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 	}
 
 	entry := r.draft.ToEntry(r.book.Context)
+	wasEditing := r.draft.EditingID != ""
 	if r.draft.EditingID != "" {
 		entry.ID = r.draft.EditingID
 		for i := range r.book.Entries {
@@ -285,7 +290,9 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 		r.book.Entries = append(r.book.Entries, entry)
 		r.statusMessage("Event saved.")
 	}
-	if entry.Mode == scorebook.ModeRun {
+	if wasEditing {
+		r.draft.Reset()
+	} else if entry.Mode == scorebook.ModeRun {
 		r.draft.PrepareForNextRunnerEvent()
 	} else {
 		r.draft.PrepareForNextPlateAppearance()
@@ -293,6 +300,13 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 	r.focused = ""
 	r.formVersion++
 	r.persist()
+	if wasEditing {
+		clearEntryFields(false, false)
+	} else if entry.Mode == scorebook.ModeRun {
+		clearEntryFields(true, true)
+	} else {
+		clearEntryFields(false, false)
+	}
 	ctx.Update()
 }
 
@@ -353,6 +367,7 @@ func (r *Root) insertToken(target, token string) app.EventHandler {
 			r.draft.Note += token
 		case "pitcher":
 			r.book.Context.Pitcher += token
+			r.book.SyncPitcherMemory()
 		case "batter":
 			r.draft.Batter += token
 		default:
@@ -377,6 +392,7 @@ func (r *Root) applyFocusedFallback(token string) {
 		r.draft.Note += token
 	case "pitcher":
 		r.book.Context.Pitcher += token
+		r.book.SyncPitcherMemory()
 	case "batter":
 		r.draft.Batter += token
 	default:
@@ -428,6 +444,7 @@ func (r *Root) restore() {
 	if book.Context.Half == "" {
 		book.Context.Half = scorebook.Top
 	}
+	book.HydratePitcherMemory()
 	r.book = book
 }
 

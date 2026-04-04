@@ -58,9 +58,11 @@ type EventDraft struct {
 }
 
 type Book struct {
-	Meta    GameMeta     `json:"meta"`
-	Context GameContext  `json:"context"`
-	Entries []EventEntry `json:"entries"`
+	Meta          GameMeta     `json:"meta"`
+	Context       GameContext  `json:"context"`
+	TopPitcher    string       `json:"topPitcher,omitempty"`
+	BottomPitcher string       `json:"bottomPitcher,omitempty"`
+	Entries       []EventEntry `json:"entries"`
 }
 
 func NewBook() Book {
@@ -74,12 +76,57 @@ func NewBook() Book {
 }
 
 func (b *Book) AdvanceHalf() {
+	b.SyncPitcherMemory()
 	if b.Context.Half == Top {
 		b.Context.Half = Bottom
+		b.Context.Pitcher = b.rememberedPitcher(Bottom)
 		return
 	}
 	b.Context.Half = Top
 	b.Context.Inning++
+	b.Context.Pitcher = b.rememberedPitcher(Top)
+}
+
+func (b *Book) RetreatHalf() {
+	b.SyncPitcherMemory()
+	if b.Context.Half == Bottom {
+		b.Context.Half = Top
+		b.Context.Pitcher = b.rememberedPitcher(Top)
+		return
+	}
+	if b.Context.Inning > 1 {
+		b.Context.Inning--
+		b.Context.Half = Bottom
+		b.Context.Pitcher = b.rememberedPitcher(Bottom)
+	}
+}
+
+func (b *Book) SyncPitcherMemory() {
+	switch b.Context.Half {
+	case Bottom:
+		b.BottomPitcher = b.Context.Pitcher
+	default:
+		b.TopPitcher = b.Context.Pitcher
+	}
+}
+
+func (b *Book) HydratePitcherMemory() {
+	for _, entry := range b.Entries {
+		switch entry.Half {
+		case Bottom:
+			b.BottomPitcher = entry.Pitcher
+		default:
+			b.TopPitcher = entry.Pitcher
+		}
+	}
+	b.SyncPitcherMemory()
+}
+
+func (b Book) rememberedPitcher(half Half) string {
+	if half == Bottom {
+		return b.BottomPitcher
+	}
+	return b.TopPitcher
 }
 
 func (d EventDraft) ToEntry(ctx GameContext) EventEntry {
