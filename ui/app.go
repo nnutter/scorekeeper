@@ -282,6 +282,8 @@ func (r *Root) retreatHalf(ctx app.Context, _ app.Event) {
 }
 
 func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
+	stickToBottom := shouldStickToPageBottom()
+
 	issues := scorebook.Validate(r.book.Meta, r.book.Context, r.draft)
 	if len(issues) > 0 {
 		r.errorMessage(issues[0])
@@ -323,6 +325,9 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 		clearEntryFields(false, false)
 	}
 	ctx.Update()
+	if stickToBottom {
+		scrollPageToBottom()
+	}
 }
 
 func (r *Root) cancelEdit(ctx app.Context, _ app.Event) {

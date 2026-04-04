@@ -15,3 +15,7 @@ func copyText(_ string) error {
 }
 
 func clearEntryFields(_, _ bool) {}
+
+func shouldStickToPageBottom() bool { return false }
+
+func scrollPageToBottom() {}
