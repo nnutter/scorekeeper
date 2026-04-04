@@ -91,9 +91,11 @@ func (r *Root) renderContext() app.UI {
 					app.Button().Class("btn warm context-step").Text("+").OnClick(r.advanceHalf),
 				),
 			),
-			app.Div().Class("context-chip compact").Body(
-				app.Span().Class("mini-label").Text("Context"),
-				app.Strong().Text(fmt.Sprintf("%d %s", r.book.Context.Inning, strings.Title(string(r.book.Context.Half)))),
+			app.Div().Class("field").Body(
+				app.Label().Class("field-label").Text("Inning"),
+				app.Div().Class("context-chip compact").Body(
+					app.Span().Text(fmt.Sprintf("%d %s", r.book.Context.Inning, strings.Title(string(r.book.Context.Half)))),
+				),
 			),
 			r.textField("Pitcher", &r.book.Context.Pitcher, "pitcher", "e.g. 45S"),
 		),
@@ -182,7 +184,7 @@ func (r *Root) renderLog() app.UI {
 	return app.Section().Class("panel").Body(
 		app.Div().Class("log-table").Body(
 			app.Div().Class("log-row log-header").Body(
-				app.Span().Text("Ctx"),
+				app.Span().Text("Inning"),
 				app.Span().Text("P"),
 				app.Span().Text("B"),
 				app.Span().Text("Pitches"),

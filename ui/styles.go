@@ -83,6 +83,15 @@ button, input, textarea {
   gap: 6px;
   justify-content: flex-end;
 }
+.game-info-grid .input,
+.game-info-actions .btn {
+  height: 35px;
+}
+.game-info-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .context-row {
   display: grid;
   grid-template-columns: 130px minmax(0, 1fr) 140px;
