@@ -30,6 +30,9 @@ a { color: var(--accent); }
 button, input, textarea {
   font: inherit;
 }
+button, a, input, textarea, summary {
+  touch-action: manipulation;
+}
 .page {
   max-width: 1100px;
   margin: 0 auto;
