@@ -213,11 +213,18 @@ func (r *Root) renderLogEntry(entry scorebook.EventEntry) app.UI {
 }
 
 func (r *Root) textField(label string, target *string, focusKey, placeholder string) app.UI {
+	input := app.Input().ID(r.fieldID(focusKey)).Class("input").Type("text").Value(*target).Placeholder(placeholder).
+		OnInput(r.bindString(target, focusKey)).
+		OnFocus(r.setFocus(focusKey))
+	if focusKey == "pitcher" || focusKey == "batter" {
+		input = input.
+			Attr("autocapitalize", "characters").
+			Spellcheck(false)
+	}
+
 	return app.Div().Class("field").Body(
 		app.Label().Class("field-label").Text(label),
-		app.Input().ID(r.fieldID(focusKey)).Class("input").Type("text").Value(*target).Placeholder(placeholder).
-			OnInput(r.bindString(target, focusKey)).
-			OnFocus(r.setFocus(focusKey)),
+		input,
 	)
 }
 
