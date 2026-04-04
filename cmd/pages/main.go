@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -34,6 +35,32 @@ func main() {
 	if err := app.GenerateStaticWebsite(outputDir, site.NewHandler(resources)); err != nil {
 		fatal(err)
 	}
+
+	for _, name := range []string{"baseball-icon.svg", "baseball-icon-192.png", "baseball-icon-512.png"} {
+		if err := copyFile(filepath.Join("web", name), filepath.Join(outputDir, "web", name)); err != nil {
+			fatal(err)
+		}
+	}
+}
+
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, in); err != nil {
+		return err
+	}
+
+	return out.Close()
 }
 
 func fatal(err error) {
