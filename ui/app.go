@@ -38,6 +38,12 @@ func (r *Root) OnMount(ctx app.Context) {
 	ctx.Update()
 }
 
+func (r *Root) OnAppUpdate(ctx app.Context) {
+	if ctx.AppUpdateAvailable() {
+		ctx.Reload()
+	}
+}
+
 func (r *Root) Render() app.UI {
 	exportText := scorebook.ExportText(r.book)
 
