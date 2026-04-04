@@ -87,6 +87,13 @@ button, input, textarea {
 .game-info-actions .btn {
   height: 35px;
 }
+.game-info-grid input[type="date"].input {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  line-height: 1.2;
+  min-height: 0;
+}
 .game-info-actions .btn {
   display: inline-flex;
   align-items: center;
