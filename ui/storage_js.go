@@ -10,6 +10,13 @@ import (
 const storageKey = "scorekeeper-book"
 
 var pageBottomSticky bool
+var pullToRefreshReady bool
+var pullStartY float64
+var pullActive bool
+var pullMoved bool
+var pullStartFunc js.Func
+var pullMoveFunc js.Func
+var pullEndFunc js.Func
 
 func loadSavedBook() (string, error) {
 	storage := js.Global().Get("localStorage")
@@ -132,4 +139,64 @@ func scrollPageToBottom() {
 		return nil
 	})
 	window.Call("requestAnimationFrame", callback)
+}
+
+func initPullToRefresh() {
+	if pullToRefreshReady {
+		return
+	}
+	window := js.Global().Get("window")
+	document := js.Global().Get("document")
+	if window.IsUndefined() || window.IsNull() || document.IsUndefined() || document.IsNull() {
+		return
+	}
+
+	pullStartFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
+		event := args[0]
+		touches := event.Get("touches")
+		if touches.Length() == 0 {
+			return nil
+		}
+		pullStartY = touches.Index(0).Get("clientY").Float()
+		pullMoved = false
+		pullActive = window.Get("scrollY").Float() <= 0
+		return nil
+	})
+	pullMoveFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
+		if !pullActive {
+			return nil
+		}
+		event := args[0]
+		touches := event.Get("touches")
+		if touches.Length() == 0 {
+			return nil
+		}
+		delta := touches.Index(0).Get("clientY").Float() - pullStartY
+		if delta > 0 {
+			pullMoved = true
+			event.Call("preventDefault")
+		}
+		return nil
+	})
+	pullEndFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
+		if pullActive && pullMoved {
+			event := args[0]
+			changedTouches := event.Get("changedTouches")
+			if changedTouches.Length() > 0 {
+				delta := changedTouches.Index(0).Get("clientY").Float() - pullStartY
+				if delta >= 72 {
+					window.Get("location").Call("reload")
+				}
+			}
+		}
+		pullActive = false
+		pullMoved = false
+		return nil
+	})
+
+	options := map[string]any{"passive": false}
+	document.Call("addEventListener", "touchstart", pullStartFunc, options)
+	document.Call("addEventListener", "touchmove", pullMoveFunc, options)
+	document.Call("addEventListener", "touchend", pullEndFunc, options)
+	pullToRefreshReady = true
 }

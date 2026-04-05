@@ -35,6 +35,7 @@ func (r *Root) OnMount(ctx app.Context) {
 		return
 	}
 	r.hasLoaded = true
+	initPullToRefresh()
 	r.restore()
 	ctx.Update()
 }
