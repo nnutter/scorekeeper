@@ -8,6 +8,7 @@ import (
 )
 
 const storageKey = "scorekeeper-book"
+const pullIndicatorThreshold = 28
 
 var pageBottomSticky bool
 var pullToRefreshReady bool
@@ -164,11 +165,7 @@ func initPullToRefresh() {
 		pullStartY = touches.Index(0).Get("clientY").Float()
 		pullMoved = false
 		pullActive = window.Get("scrollY").Float() <= 0
-		if pullActive {
-			setPullIndicator(0, false)
-		} else {
-			hidePullIndicator()
-		}
+		hidePullIndicator()
 		return nil
 	})
 	pullMoveFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
@@ -183,7 +180,11 @@ func initPullToRefresh() {
 		delta := touches.Index(0).Get("clientY").Float() - pullStartY
 		if delta > 0 {
 			pullMoved = true
-			setPullIndicator(delta, delta >= pullReloadThreshold)
+			if delta >= pullIndicatorThreshold {
+				setPullIndicator(delta, delta >= pullReloadThreshold)
+			} else {
+				hidePullIndicator()
+			}
 			event.Call("preventDefault")
 		} else {
 			hidePullIndicator()
