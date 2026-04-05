@@ -470,6 +470,9 @@ button, a, input, textarea, summary {
       "home email";
     gap: 7px 8px;
   }
+  .game-info-layout input[type="date"].input {
+    text-align: left;
+  }
   .game-info-layout .btn {
     justify-self: stretch;
     align-self: end;
