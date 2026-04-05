@@ -240,6 +240,12 @@ button, a, input, textarea, summary {
 .keyboard-mobile-main {
   min-width: 0;
 }
+.keyboard-mobile-pane {
+  display: none;
+}
+.keyboard-mobile-pane.active {
+  display: block;
+}
 .keyboard-mobile-main .keyboard-group {
   height: 234px;
   align-content: start;

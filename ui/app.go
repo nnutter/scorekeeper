@@ -170,14 +170,6 @@ func (r *Root) renderKeyboard() app.UI {
 		desktopGroups = append(desktopGroups, r.renderTokenGroup(group.Rows, group.Target))
 	}
 
-	active := groups[0]
-	for _, group := range groups {
-		if group.Key == r.mobileKeys {
-			active = group
-			break
-		}
-	}
-
 	return app.Section().Class("panel keyboard-panel").Body(
 		app.P().Class("meta-line").Text(r.keyboardHelpText()),
 		app.Div().Class("keyboard-grid").Body(
@@ -189,7 +181,7 @@ func (r *Root) renderKeyboard() app.UI {
 				r.keyboardSwitch(groups[2]),
 			),
 			app.Div().Class("keyboard-mobile-main").Body(
-				r.renderTokenGroup(active.Rows, active.Target),
+				r.renderMobileTokenGroups(groups)...,
 			),
 			app.Div().Class("keyboard-mobile-rail").Body(
 				r.keyboardSwitch(groups[1]),
@@ -197,6 +189,20 @@ func (r *Root) renderKeyboard() app.UI {
 			),
 		),
 	)
+}
+
+func (r *Root) renderMobileTokenGroups(groups []keyboardGroup) []app.UI {
+	panes := make([]app.UI, 0, len(groups))
+	for _, group := range groups {
+		class := "keyboard-mobile-pane"
+		if r.mobileKeys == group.Key {
+			class += " active"
+		}
+		panes = append(panes, app.Div().Class(class).Body(
+			r.renderTokenGroup(group.Rows, group.Target),
+		))
+	}
+	return panes
 }
 
 type keyboardGroup struct {
