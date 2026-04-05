@@ -36,7 +36,16 @@ func main() {
 		fatal(err)
 	}
 
-	for _, name := range []string{"baseball-icon.svg", "baseball-icon-192.png", "baseball-icon-512.png"} {
+	assets := []string{"baseball-icon.svg", "baseball-icon-192.png", "baseball-icon-512.png"}
+	iconAssets, err := filepath.Glob(filepath.Join("web", "icon-*.svg"))
+	if err != nil {
+		fatal(err)
+	}
+	for _, path := range iconAssets {
+		assets = append(assets, filepath.Base(path))
+	}
+
+	for _, name := range assets {
 		if err := copyFile(filepath.Join("web", name), filepath.Join(outputDir, "web", name)); err != nil {
 			fatal(err)
 		}
