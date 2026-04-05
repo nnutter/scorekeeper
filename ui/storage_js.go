@@ -14,9 +14,12 @@ var pullToRefreshReady bool
 var pullStartY float64
 var pullActive bool
 var pullMoved bool
+var pullIndicator js.Value
 var pullStartFunc js.Func
 var pullMoveFunc js.Func
 var pullEndFunc js.Func
+
+const pullReloadThreshold = 72
 
 func loadSavedBook() (string, error) {
 	storage := js.Global().Get("localStorage")
@@ -150,6 +153,7 @@ func initPullToRefresh() {
 	if window.IsUndefined() || window.IsNull() || document.IsUndefined() || document.IsNull() {
 		return
 	}
+	initPullIndicator(document)
 
 	pullStartFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
 		event := args[0]
@@ -160,6 +164,11 @@ func initPullToRefresh() {
 		pullStartY = touches.Index(0).Get("clientY").Float()
 		pullMoved = false
 		pullActive = window.Get("scrollY").Float() <= 0
+		if pullActive {
+			setPullIndicator(0, false)
+		} else {
+			hidePullIndicator()
+		}
 		return nil
 	})
 	pullMoveFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
@@ -174,23 +183,29 @@ func initPullToRefresh() {
 		delta := touches.Index(0).Get("clientY").Float() - pullStartY
 		if delta > 0 {
 			pullMoved = true
+			setPullIndicator(delta, delta >= pullReloadThreshold)
 			event.Call("preventDefault")
+		} else {
+			hidePullIndicator()
 		}
 		return nil
 	})
 	pullEndFunc = js.FuncOf(func(this js.Value, args []js.Value) any {
+		shouldReload := false
 		if pullActive && pullMoved {
 			event := args[0]
 			changedTouches := event.Get("changedTouches")
 			if changedTouches.Length() > 0 {
 				delta := changedTouches.Index(0).Get("clientY").Float() - pullStartY
-				if delta >= 72 {
-					window.Get("location").Call("reload")
-				}
+				shouldReload = delta >= pullReloadThreshold
 			}
 		}
+		hidePullIndicator()
 		pullActive = false
 		pullMoved = false
+		if shouldReload {
+			window.Get("location").Call("reload")
+		}
 		return nil
 	})
 
@@ -199,4 +214,47 @@ func initPullToRefresh() {
 	document.Call("addEventListener", "touchmove", pullMoveFunc, options)
 	document.Call("addEventListener", "touchend", pullEndFunc, options)
 	pullToRefreshReady = true
+}
+
+func initPullIndicator(document js.Value) {
+	if pullIndicator.Truthy() {
+		return
+	}
+	pullIndicator = document.Call("createElement", "div")
+	pullIndicator.Set("className", "pull-refresh-indicator")
+	pullIndicator.Set("textContent", "Pull to reload")
+	document.Get("body").Call("appendChild", pullIndicator)
+}
+
+func setPullIndicator(delta float64, ready bool) {
+	if !pullIndicator.Truthy() {
+		return
+	}
+	progress := delta / pullReloadThreshold
+	if progress > 1 {
+		progress = 1
+	}
+	pullIndicator.Set("className", "pull-refresh-indicator visible")
+	if ready {
+		pullIndicator.Get("classList").Call("add", "ready")
+		pullIndicator.Set("textContent", "Release to reload")
+	} else {
+		pullIndicator.Get("classList").Call("remove", "ready")
+		pullIndicator.Set("textContent", "Pull to reload")
+	}
+	opacity := 0.35 + (0.65 * progress)
+	translate := -18 + int(18*progress)
+	pullIndicator.Get("style").Set("opacity", opacity)
+	pullIndicator.Get("style").Set("transform", "translate(-50%, "+js.ValueOf(translate).String()+"px)")
+}
+
+func hidePullIndicator() {
+	if !pullIndicator.Truthy() {
+		return
+	}
+	pullIndicator.Set("className", "pull-refresh-indicator")
+	pullIndicator.Get("classList").Call("remove", "ready")
+	pullIndicator.Set("textContent", "Pull to reload")
+	pullIndicator.Get("style").Set("opacity", "")
+	pullIndicator.Get("style").Set("transform", "")
 }

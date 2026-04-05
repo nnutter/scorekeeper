@@ -41,6 +41,36 @@ button, a, input, textarea, summary {
   margin: 0 auto;
   padding: 10px;
 }
+.pull-refresh-indicator {
+  position: fixed;
+  top: calc(max(12px, env(safe-area-inset-top)) + 10px);
+  left: 50%;
+  transform: translate(-50%, -24px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 40;
+  min-width: 156px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(76, 60, 41, 0.3);
+  background: rgba(255, 253, 248, 0.99);
+  color: #4a3d31;
+  box-shadow: 0 14px 28px rgba(56, 40, 20, 0.22);
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-align: center;
+  transition: opacity 120ms ease, transform 120ms ease, color 120ms ease, border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+.pull-refresh-indicator.visible {
+  opacity: 1;
+}
+.pull-refresh-indicator.ready {
+  color: #f7fffe;
+  border-color: rgba(13,92,99,0.7);
+  background: rgba(13, 92, 99, 0.96);
+  box-shadow: 0 16px 30px rgba(13, 92, 99, 0.28);
+}
 .stack {
   display: grid;
   gap: 8px;
