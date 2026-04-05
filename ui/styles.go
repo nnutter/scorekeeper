@@ -480,7 +480,7 @@ button, a, input, textarea, summary {
 @media (max-width: 720px) {
   .page {
     padding: 10px;
-    padding-bottom: calc(272px + env(safe-area-inset-bottom));
+    padding-bottom: 272px;
   }
   .main-stack,
   .event-layout,
