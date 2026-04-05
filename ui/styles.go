@@ -264,8 +264,9 @@ button, a, input, textarea, summary {
 }
 .keyboard-mobile-rail {
   display: grid;
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-rows: repeat(2, 96px);
+  align-content: start;
+  gap: 6px;
 }
 .keyboard-mobile-main {
   min-width: 0;
@@ -284,17 +285,13 @@ button, a, input, textarea, summary {
 .keyboard-switch {
   width: 32px;
   min-width: 32px;
-  height: 100%;
+  height: 96px;
   min-height: 0;
   padding: 0;
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-.keyboard-mobile-rail .keyboard-switch:last-child {
-  height: calc(100% - 10px);
-  align-self: start;
 }
 .keyboard-switch.active {
   background: var(--accent-soft);
@@ -493,10 +490,10 @@ button, a, input, textarea, summary {
   .keyboard-panel {
     left: 10px;
     right: 10px;
-    bottom: calc(env(safe-area-inset-bottom) + 10px);
+    bottom: 10px;
     overflow: hidden;
-    border-bottom-left-radius: 34px;
-    border-bottom-right-radius: 34px;
+    border-bottom-left-radius: 62px;
+    border-bottom-right-radius: 62px;
   }
   .event-layout {
     grid-template-columns: 1fr;
