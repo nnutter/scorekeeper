@@ -19,10 +19,11 @@ type Root struct {
 	hasLoaded   bool
 	messageKind string
 	formVersion int
+	mobileKeys  string
 }
 
 func New() *Root {
-	r := &Root{}
+	r := &Root{mobileKeys: "pitches"}
 	r.book = scorebook.NewBook()
 	r.draft.Reset()
 	return r
@@ -47,7 +48,7 @@ func (r *Root) OnAppUpdate(ctx app.Context) {
 func (r *Root) Render() app.UI {
 	exportText := scorebook.ExportText(r.book)
 
-	return app.Div().Class("page").Body(
+	return app.Div().Class(r.pageClass()).Body(
 		app.Div().Class("stack main-stack").Body(
 			r.renderGameInfo(exportText),
 			r.renderLog(),
@@ -60,25 +61,35 @@ func (r *Root) Render() app.UI {
 	)
 }
 
+func (r *Root) pageClass() string {
+	return "page"
+}
+
 
 func (r *Root) renderGameInfo(exportText string) app.UI {
 	return app.Section().Class("panel").Body(
-		app.Div().Class("game-info-row").Body(
-			app.Div().Class("game-info-grid").Body(
-				r.textField("Away Team", &r.book.Meta.AwayTeam, "away-team", "e.g. Yankees"),
-				app.Div().Class("field").Body(
-					app.Label().Text("Game Date"),
-					app.Input().ID(r.fieldID("game-date")).Class("input").Type("date").Value(r.book.Meta.GameDate).
-						OnInput(r.bindString(&r.book.Meta.GameDate, "game-date")).
-						OnFocus(r.setFocus("game-date")),
-				),
-				r.textField("Home Team", &r.book.Meta.HomeTeam, "home-team", "e.g. Red Sox"),
+		app.Div().Class("game-info-layout").Body(
+			app.Div().Class("field game-away").Body(
+				app.Label().Class("field-label").Text("Away Team"),
+				app.Input().ID(r.fieldID("away-team")).Class("input").Type("text").Value(r.book.Meta.AwayTeam).Placeholder("e.g. Yankees").
+					OnInput(r.bindString(&r.book.Meta.AwayTeam, "away-team")).
+					OnFocus(r.setFocus("away-team")),
 			),
-			app.Div().Class("game-info-actions").Body(
-				app.Button().Class("btn").Text("New Game").OnClick(r.newGame),
-				app.Button().Class("btn primary").Text("Copy").OnClick(r.copyExport),
-				app.A().Class("btn").Href(scorebook.MailtoLink(r.book)).Text("Email"),
+			r.iconButton("btn danger game-new", "/web/icon-clear-all.svg", "New Game").OnClick(r.newGame),
+			app.Div().Class("field game-date").Body(
+				app.Label().Class("field-label").Text("Game Date"),
+				app.Input().ID(r.fieldID("game-date")).Class("input").Type("date").Value(r.book.Meta.GameDate).
+					OnInput(r.bindString(&r.book.Meta.GameDate, "game-date")).
+					OnFocus(r.setFocus("game-date")),
 			),
+			r.iconButton("btn game-copy", "/web/icon-copy.svg", "Copy").OnClick(r.copyExport),
+			app.Div().Class("field game-home").Body(
+				app.Label().Class("field-label").Text("Home Team"),
+				app.Input().ID(r.fieldID("home-team")).Class("input").Type("text").Value(r.book.Meta.HomeTeam).Placeholder("e.g. Red Sox").
+					OnInput(r.bindString(&r.book.Meta.HomeTeam, "home-team")).
+					OnFocus(r.setFocus("home-team")),
+			),
+			r.iconLink("btn game-email", "/web/icon-email.svg", "Email", scorebook.MailtoLink(r.book)),
 		),
 		app.Details().Class("export-details").Body(
 			app.Summary().Class("export-summary").Text("Show Preview"),
@@ -89,7 +100,7 @@ func (r *Root) renderGameInfo(exportText string) app.UI {
 
 func (r *Root) renderContext() app.UI {
 	return app.Section().Class("panel context-panel").Body(
-		app.Div().Class("stack").Body(
+		app.Div().Class("stack context-layout").Body(
 			app.Div().Class("field context-actions").Body(
 				app.Label().Text(" "),
 				app.Div().Class("context-action-row").Body(
@@ -97,13 +108,15 @@ func (r *Root) renderContext() app.UI {
 					app.Button().Class("btn warm context-step").Text("+").OnClick(r.advanceHalf),
 				),
 			),
-			app.Div().Class("field").Body(
+			app.Div().Class("field context-inning").Body(
 				app.Label().Class("field-label").Text("Inning"),
 				app.Div().Class("context-chip compact").Body(
 					app.Span().Text(fmt.Sprintf("%d %s", r.book.Context.Inning, strings.Title(string(r.book.Context.Half)))),
 				),
 			),
-			r.textField("Pitcher", &r.book.Context.Pitcher, "pitcher", "e.g. 45S"),
+			app.Div().Class("context-pitcher").Body(
+				r.textField("Pitcher", &r.book.Context.Pitcher, "pitcher", "e.g. 45S"),
+			),
 		),
 	)
 }
@@ -119,9 +132,9 @@ func (r *Root) renderEntry() app.UI {
 		}),
 		app.Div().ID(r.fieldID("entry-grid")).Class(r.entryGridClass()).Body(r.renderEntryFields()...),
 		app.Div().Class("actions-row").Body(
-			app.Button().Class("btn primary").Text(r.saveLabel()).OnClick(r.saveEntry),
+			r.saveIconButton().OnClick(r.saveEntry),
 			app.If(r.draft.EditingID != "", func() app.UI {
-				return app.Button().Class("btn").Text("Cancel Edit").OnClick(r.cancelEdit)
+				return r.iconButton("btn", "/web/icon-cancel.svg", "Cancel Edit").OnClick(r.cancelEdit)
 			}),
 		),
 	)
@@ -151,15 +164,70 @@ func (r *Root) renderEntryFields() []app.UI {
 }
 
 func (r *Root) renderKeyboard() app.UI {
+	groups := r.keyboardGroups()
+	desktopGroups := make([]app.UI, 0, len(groups))
+	for _, group := range groups {
+		desktopGroups = append(desktopGroups, r.renderTokenGroup(group.Rows, group.Target))
+	}
+
+	active := groups[0]
+	for _, group := range groups {
+		if group.Key == r.mobileKeys {
+			active = group
+			break
+		}
+	}
+
 	return app.Section().Class("panel keyboard-panel").Body(
 		app.P().Class("meta-line").Text(r.keyboardHelpText()),
 		app.Div().Class("keyboard-grid").Body(
-			r.renderTokenGroup(scorebook.PitchTokenRows, "pitches"),
-			r.renderTokenGroup(scorebook.BatterTokenRows, "batter-event"),
-			r.renderTokenGroup(scorebook.RunnerTokenRows, "runner-event"),
-			r.renderTokenGroup(scorebook.AdvanceTokenRows, "advances"),
+			desktopGroups..., 
+		),
+		app.Div().Class("keyboard-mobile").Body(
+			app.Div().Class("keyboard-mobile-rail").Body(
+				r.keyboardSwitch(groups[0]),
+				r.keyboardSwitch(groups[2]),
+			),
+			app.Div().Class("keyboard-mobile-main").Body(
+				r.renderTokenGroup(active.Rows, active.Target),
+			),
+			app.Div().Class("keyboard-mobile-rail").Body(
+				r.keyboardSwitch(groups[1]),
+				r.keyboardSwitch(groups[3]),
+			),
 		),
 	)
+}
+
+type keyboardGroup struct {
+	Key    string
+	Label  string
+	Target string
+	Rows   [][]string
+}
+
+func (r *Root) keyboardGroups() []keyboardGroup {
+	return []keyboardGroup{
+		{Key: "pitches", Label: "P", Target: "pitches", Rows: scorebook.PitchTokenRows},
+		{Key: "batter-event", Label: "B", Target: "batter-event", Rows: scorebook.BatterTokenRows},
+		{Key: "runner-event", Label: "R", Target: "runner-event", Rows: scorebook.RunnerTokenRows},
+		{Key: "advances", Label: "A", Target: "advances", Rows: scorebook.AdvanceTokenRows},
+	}
+}
+
+func (r *Root) keyboardSwitch(group keyboardGroup) app.UI {
+	class := "btn keyboard-switch"
+	if r.mobileKeys == group.Key {
+		class += " active"
+	}
+	return app.Button().Class(class).Text(group.Label).OnClick(r.setKeyboardGroup(group.Key))
+}
+
+func (r *Root) setKeyboardGroup(key string) app.EventHandler {
+	return func(ctx app.Context, e app.Event) {
+		r.mobileKeys = key
+		ctx.Update()
+	}
 }
 
 func (r *Root) keyboardHelpText() string {
@@ -190,12 +258,14 @@ func (r *Root) renderLog() app.UI {
 	return app.Section().Class("panel").Body(
 		app.Div().Class("log-table").Body(
 			app.Div().Class("log-row log-header").Body(
-				app.Span().Text("Inning"),
+				app.Span().Body(
+					app.Span().Class("desktop-only").Text("Inning"),
+					app.Span().Class("mobile-only").Text("Inn"),
+				),
 				app.Span().Text("P"),
 				app.Span().Text("B"),
 				app.Span().Text("Pitches"),
 				app.Span().Text("Event"),
-				app.Span().Text("Note"),
 				app.Span().Text(""),
 			),
 			app.Div().Class("entry-list").Body(rows...),
@@ -204,17 +274,31 @@ func (r *Root) renderLog() app.UI {
 }
 
 func (r *Root) renderLogEntry(entry scorebook.EventEntry) app.UI {
-	return app.Div().Class("log-row").Body(
-		app.Span().Text(shortContext(entry)),
-		app.Span().Text(entry.Pitcher),
-		app.Span().Text(entry.Batter),
-		app.Span().Text(orDash(entry.Pitches)),
-		app.Span().Text(r.logEventText(entry)),
-		app.Span().Class("log-note").Text(orDash(entry.Note)),
-		app.Div().Class("log-actions").Body(
-			app.Button().Class("btn").Text("Edit").OnClick(r.editEntry(entry.ID)),
-			app.Button().Class("btn danger").Text("Delete").OnClick(r.deleteEntry(entry.ID)),
+	children := []app.UI{
+		app.Div().Class("log-row").Body(
+			app.Span().Text(shortContext(entry)),
+			app.Span().Text(entry.Pitcher),
+			app.Span().Text(entry.Batter),
+			app.Span().Text(orDash(entry.Pitches)),
+			app.Span().Text(r.logEventText(entry)),
+			app.Div().Class("log-actions").Body(
+				app.Button().Class("btn icon-btn").Attr("aria-label", "Edit event").Attr("title", "Edit event").Body(
+					app.Img().Src("/web/icon-edit.svg").Alt(""),
+				).OnClick(r.editEntry(entry.ID)),
+				app.Button().Class("btn danger icon-btn").Attr("aria-label", "Delete event").Attr("title", "Delete event").Body(
+					app.Img().Src("/web/icon-delete.svg").Alt(""),
+				).OnClick(r.deleteEntry(entry.ID)),
+			),
 		),
+	}
+	if strings.TrimSpace(entry.Note) != "" {
+		children = append(children, app.Div().Class("log-note-row").Body(
+			app.Span().Class("log-note-label"),
+			app.Span().Class("log-note").Text(entry.Note),
+		))
+	}
+	return app.Div().Class("log-entry").Body(
+		children..., 
 	)
 }
 
@@ -241,6 +325,25 @@ func (r *Root) textAreaField(label string, target *string, focusKey, placeholder
 			OnInput(r.bindString(target, focusKey)).
 			OnFocus(r.setFocus(focusKey)),
 	)
+}
+
+func (r *Root) iconButton(className, src, label string) app.HTMLButton {
+	return app.Button().Class(className + " action-icon-btn").Attr("aria-label", label).Attr("title", label).Body(
+		app.Img().Class("action-icon").Src(src).Alt(""),
+	)
+}
+
+func (r *Root) iconLink(className, src, label, href string) app.HTMLA {
+	return app.A().Class(className + " action-icon-btn").Href(href).Attr("aria-label", label).Attr("title", label).Body(
+		app.Img().Class("action-icon").Src(src).Alt(""),
+	)
+}
+
+func (r *Root) saveIconButton() app.HTMLButton {
+	if r.draft.EditingID != "" {
+		return r.iconButton("btn save-action-btn", "/web/icon-approve.svg", "Update Event")
+	}
+	return r.iconButton("btn save-action-btn", "/web/icon-add.svg", "Save Event")
 }
 
 func (r *Root) bindString(target *string, focusKey string) app.EventHandler {
@@ -335,6 +438,7 @@ func (r *Root) cancelEdit(ctx app.Context, _ app.Event) {
 	r.statusMessage("Edit canceled.")
 	r.formVersion++
 	r.persist()
+	clearEntryFields(false, false)
 	ctx.Update()
 }
 

@@ -21,12 +21,14 @@ body {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
   color: var(--ink);
+  overflow-x: hidden;
   background:
     radial-gradient(circle at top left, rgba(189,99,47,0.16), transparent 32%),
     radial-gradient(circle at top right, rgba(13,92,99,0.16), transparent 28%),
     linear-gradient(180deg, #f3ede2 0%, var(--bg) 100%);
 }
 a { color: var(--accent); }
+.mobile-only { display: none; }
 button, input, textarea {
   font: inherit;
 }
@@ -34,6 +36,7 @@ button, a, input, textarea, summary {
   touch-action: manipulation;
 }
 .page {
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
   padding: 10px;
@@ -52,6 +55,7 @@ button, a, input, textarea, summary {
   align-items: start;
 }
 .panel {
+  min-width: 0;
   padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -68,39 +72,54 @@ button, a, input, textarea, summary {
 }
 .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.game-info-grid {
+.game-info-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 144px minmax(0, 1fr);
-  gap: 6px;
-  align-items: end;
-}
-.game-info-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 144px minmax(0, 1fr) auto auto auto;
   gap: 8px;
   align-items: end;
+  grid-template-areas: "away date home new copy email";
 }
-.game-info-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: flex-end;
+.game-away { grid-area: away; }
+.game-date { grid-area: date; }
+.game-home { grid-area: home; }
+.game-new { grid-area: new; }
+.game-copy { grid-area: copy; }
+.game-email { grid-area: email; }
+.game-info-layout .btn {
+  justify-self: end;
 }
-.game-info-grid .input,
-.game-info-actions .btn {
+.game-info-layout .input,
+.game-info-layout .btn {
   height: 35px;
 }
-.game-info-grid input[type="date"].input {
+.game-info-layout input[type="date"].input {
   appearance: none;
   -webkit-appearance: none;
   display: block;
   line-height: 1.2;
   min-height: 0;
 }
-.game-info-actions .btn {
+.game-info-layout .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+.action-icon-btn {
+  width: 35px;
+  min-width: 35px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.save-action-btn {
+  background: #fffdf9;
+  border-color: var(--line);
+}
+.action-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 .context-row {
   display: grid;
@@ -110,6 +129,9 @@ button, a, input, textarea, summary {
 }
 .context-panel {
   align-self: start;
+}
+.context-layout {
+  margin-top: 0;
 }
 .combined-grid {
   grid-template-columns: 0.95fr 0.9fr 1.1fr 1fr 1.1fr;
@@ -141,6 +163,9 @@ button, a, input, textarea, summary {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+.actions-row {
+  margin-top: 7px;
 }
 .btn {
   border: 1px solid var(--line);
@@ -204,6 +229,36 @@ button, a, input, textarea, summary {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
+.keyboard-mobile {
+  display: none;
+}
+.keyboard-mobile-rail {
+  display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.keyboard-mobile-main {
+  min-width: 0;
+}
+.keyboard-mobile-main .keyboard-group {
+  height: 234px;
+  align-content: start;
+  overflow: hidden;
+}
+.keyboard-switch {
+  width: 32px;
+  min-width: 32px;
+  min-height: 72px;
+  padding: 0;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.keyboard-switch.active {
+  background: var(--accent-soft);
+  border-color: rgba(13,92,99,0.38);
+}
 .keyboard-row {
   gap: 6px;
 }
@@ -240,20 +295,22 @@ button, a, input, textarea, summary {
   display: grid;
   gap: 0;
 }
+.log-entry {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+}
+.log-entry:last-child {
+  border-bottom: 0;
+}
 .log-table {
   display: grid;
   gap: 4px;
 }
 .log-row {
   display: grid;
-  grid-template-columns: 56px 56px 70px 84px minmax(0, 1.4fr) minmax(90px, 1fr) 110px;
+  grid-template-columns: 56px 56px 70px 84px minmax(0, 1.4fr) 110px;
   gap: 6px;
   align-items: center;
-  padding: 4px 0;
-  border-bottom: 1px solid var(--line);
-}
-.log-row:last-child {
-  border-bottom: 0;
 }
 .log-row span {
   min-width: 0;
@@ -270,6 +327,23 @@ button, a, input, textarea, summary {
 }
 .log-note {
   color: var(--muted);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.log-note-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 3px;
+  font-size: 0.84rem;
+}
+.log-note-label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+  padding-top: 1px;
 }
 .log-actions {
   display: flex;
@@ -279,6 +353,19 @@ button, a, input, textarea, summary {
 .log-actions .btn {
   padding: 4px 8px;
   font-size: 0.78rem;
+}
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-btn img {
+  width: 15px;
+  height: 15px;
+  display: block;
 }
 .log-empty {
   padding: 8px 0 2px;
@@ -323,7 +410,7 @@ button, a, input, textarea, summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .log-row {
-    grid-template-columns: 50px 50px 64px 70px minmax(0, 1.2fr) minmax(80px, 0.9fr) 96px;
+    grid-template-columns: 50px 50px 64px 70px minmax(0, 1.2fr) 96px;
   }
 }
 @media (max-width: 1100px) {
@@ -352,17 +439,124 @@ button, a, input, textarea, summary {
 @media (max-width: 720px) {
   .page {
     padding: 10px;
-    padding-bottom: 780px;
+    padding-bottom: 286px;
+  }
+  .main-stack,
+  .event-layout,
+  .log-table,
+  .log-row,
+  .keyboard-mobile,
+  .keyboard-mobile-main {
+    min-width: 0;
+  }
+  .keyboard-panel {
+    left: 10px;
+    right: 10px;
   }
   .event-layout {
     grid-template-columns: 1fr;
   }
-  .grid.two, .grid.three, .combined-grid, .game-info-grid, .context-row, .game-info-row { grid-template-columns: 1fr; }
-  .keyboard-grid {
-    grid-template-columns: 1fr;
+  .game-info-layout {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "away new"
+      "date copy"
+      "home email";
+    gap: 7px 8px;
+  }
+  .game-info-layout .btn {
+    justify-self: stretch;
+    align-self: end;
+  }
+  .context-layout {
+    display: grid;
+    grid-template-columns: 70px 34px 34px 10px minmax(0, 1fr);
+    grid-template-areas: "inning actions actions . pitcher";
+    gap: 6px;
+    align-items: end;
+  }
+  .context-inning {
+    grid-area: inning;
+    max-width: 72px;
+  }
+  .context-inning .field-label,
+  .context-actions label,
+  .context-pitcher .field-label {
+    display: none;
+  }
+  .context-actions {
+    grid-area: actions;
+  }
+  .context-action-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .context-pitcher {
+    grid-area: pitcher;
+    min-width: 0;
+    justify-self: end;
+    width: 100%;
+    max-width: 96px;
+  }
+  .context-chip,
+  .context-actions .btn,
+  .context-pitcher .input {
+    height: 35px;
+  }
+  .context-chip.compact {
+    display: flex;
+    align-items: center;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .combined-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .combined-grid .field:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .combined-grid .field:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .combined-grid .field:nth-child(3) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .combined-grid .field:nth-child(5) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .combined-grid .field:nth-child(4) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+  .combined-grid .field:last-child {
+    grid-column: 1 / -1;
+    grid-row: 4;
+  }
+  .grid.two, .grid.three, .context-row { grid-template-columns: 1fr; }
+  .desktop-only { display: none; }
+  .mobile-only { display: inline; }
+  .log-table {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .log-row {
-    grid-template-columns: 44px 44px 56px 64px minmax(0, 1fr) 80px 88px;
+    min-width: 0;
+  }
+  .keyboard-grid {
+    display: none;
+  }
+  .keyboard-mobile {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 32px;
+    gap: 6px;
+    align-items: stretch;
+  }
+  .log-row {
+    grid-template-columns: 44px 44px 56px 64px minmax(0, 1fr) 88px;
     font-size: 0.82rem;
   }
 }
