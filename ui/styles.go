@@ -508,6 +508,19 @@ button, a, input, textarea, summary {
   }
   .game-info-layout input[type="date"].input {
     text-align: left;
+    color: var(--ink);
+    -webkit-text-fill-color: var(--ink);
+    justify-content: flex-start;
+  }
+  .game-info-layout input[type="date"].input::-webkit-date-and-time-value {
+    text-align: left;
+  }
+  .game-info-layout input[type="date"].input::-webkit-datetime-edit {
+    color: var(--ink);
+    padding: 0;
+  }
+  .game-info-layout input[type="date"].input::-webkit-datetime-edit-fields-wrapper {
+    justify-content: flex-start;
   }
   .game-info-layout .btn {
     justify-self: stretch;
