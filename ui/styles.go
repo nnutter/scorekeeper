@@ -480,7 +480,7 @@ button, a, input, textarea, summary {
 @media (max-width: 720px) {
   .page {
     padding: 10px;
-    padding-bottom: 272px;
+    padding-bottom: calc(272px + env(safe-area-inset-bottom));
   }
   .main-stack,
   .event-layout,
@@ -493,6 +493,8 @@ button, a, input, textarea, summary {
   .keyboard-panel {
     left: 10px;
     right: 10px;
+    bottom: calc(env(safe-area-inset-bottom) + 10px);
+    overflow: hidden;
     border-bottom-left-radius: 34px;
     border-bottom-right-radius: 34px;
   }
