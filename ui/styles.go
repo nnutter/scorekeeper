@@ -445,7 +445,7 @@ button, a, input, textarea, summary {
 @media (max-width: 720px) {
   .page {
     padding: 10px;
-    padding-bottom: 286px;
+    padding-bottom: 272px;
   }
   .main-stack,
   .event-layout,
