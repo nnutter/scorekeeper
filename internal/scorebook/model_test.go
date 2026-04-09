@@ -79,6 +79,74 @@ func TestHydratePitcherMemory(t *testing.T) {
 	}
 }
 
+func TestRecordPlateAppearanceLearnsBattingOrderByTeam(t *testing.T) {
+	book := NewBook()
+
+	book.RecordPlateAppearance(EventEntry{Mode: ModePlay, Half: Top, Batter: "A1"})
+	book.RecordPlateAppearance(EventEntry{Mode: ModePlay, Half: Top, Batter: "A2"})
+	book.RecordPlateAppearance(EventEntry{Mode: ModePlay, Half: Bottom, Batter: "H1"})
+
+	if got := book.RememberedBatter(); got != "" {
+		t.Fatalf("top remembered batter = %q, want empty for unknown next slot", got)
+	}
+
+	book.Context.Half = Bottom
+	if got := book.RememberedBatter(); got != "" {
+		t.Fatalf("bottom remembered batter = %q, want empty for unknown next slot", got)
+	}
+}
+
+func TestRecordPlateAppearanceIgnoresRunnerEvents(t *testing.T) {
+	book := NewBook()
+	book.RecordPlateAppearance(EventEntry{Mode: ModePlay, Half: Top, Batter: "A1"})
+	book.RecordPlateAppearance(EventEntry{Mode: ModeRun, Half: Top, Batter: "A1", RunnerEvent: "SB2"})
+
+	if got := book.RememberedBatter(); got != "" {
+		t.Fatalf("remembered batter after runner event = %q, want empty for unknown next slot", got)
+	}
+}
+
+func TestHydrateBattingMemoryRebuildsExpectedBatter(t *testing.T) {
+	book := Book{
+		Context: GameContext{Inning: 3, Half: Top},
+		Entries: []EventEntry{
+			{Mode: ModePlay, Inning: 1, Half: Top, Batter: "A1"},
+			{Mode: ModePlay, Inning: 1, Half: Top, Batter: "A2"},
+			{Mode: ModeRun, Inning: 1, Half: Top, Batter: "A2", RunnerEvent: "SB2"},
+			{Mode: ModePlay, Inning: 1, Half: Bottom, Batter: "H1"},
+			{Mode: ModePlay, Inning: 2, Half: Top, Batter: "A1"},
+		},
+	}
+
+	book.HydrateBattingMemory()
+
+	if got := book.RememberedBatter(); got != "A2" {
+		t.Fatalf("top remembered batter after hydrate = %q, want A2", got)
+	}
+
+	book.Context.Half = Bottom
+	if got := book.RememberedBatter(); got != "" {
+		t.Fatalf("bottom remembered batter after hydrate = %q, want empty for unknown next slot", got)
+	}
+}
+
+func TestRecordPlateAppearanceReturnsLearnedBatterAfterWrap(t *testing.T) {
+	book := NewBook()
+	book.RecordPlateAppearance(EventEntry{Mode: ModePlay, Half: Top, Batter: "A1"})
+	book.RecordPlateAppearance(EventEntry{Mode: ModePlay, Half: Top, Batter: "A2"})
+	book.RecordPlateAppearance(EventEntry{Mode: ModePlay, Half: Top, Batter: "A3"})
+
+	if got := book.RememberedBatter(); got != "" {
+		t.Fatalf("remembered batter before wrap = %q, want empty", got)
+	}
+
+	book.RecordPlateAppearance(EventEntry{Mode: ModePlay, Half: Top, Batter: "A1"})
+
+	if got := book.RememberedBatter(); got != "A2" {
+		t.Fatalf("remembered batter after wrap = %q, want A2", got)
+	}
+}
+
 func TestEventDraftToEntryTrimsValues(t *testing.T) {
 	draft := EventDraft{
 		Batter:      " 12J ",

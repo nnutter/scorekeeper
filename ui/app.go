@@ -37,6 +37,7 @@ func (r *Root) OnMount(ctx app.Context) {
 	r.hasLoaded = true
 	initPullToRefresh()
 	r.restore()
+	r.syncDraftBatter(false)
 	ctx.Update()
 }
 
@@ -65,7 +66,6 @@ func (r *Root) Render() app.UI {
 func (r *Root) pageClass() string {
 	return "page"
 }
-
 
 func (r *Root) renderGameInfo(exportText string) app.UI {
 	return app.Section().Class("panel").Body(
@@ -174,7 +174,7 @@ func (r *Root) renderKeyboard() app.UI {
 	return app.Section().Class("panel keyboard-panel").Body(
 		app.P().Class("meta-line").Text(r.keyboardHelpText()),
 		app.Div().Class("keyboard-grid").Body(
-			desktopGroups..., 
+			desktopGroups...,
 		),
 		app.Div().Class("keyboard-mobile").Body(
 			app.Div().Class("keyboard-mobile-rail").Body(
@@ -305,7 +305,7 @@ func (r *Root) renderLogEntry(entry scorebook.EventEntry) app.UI {
 		))
 	}
 	return app.Div().Class("log-entry").Body(
-		children..., 
+		children...,
 	)
 }
 
@@ -335,13 +335,13 @@ func (r *Root) textAreaField(label string, target *string, focusKey, placeholder
 }
 
 func (r *Root) iconButton(className, src, label string) app.HTMLButton {
-	return app.Button().Class(className + " action-icon-btn").Attr("aria-label", label).Attr("title", label).Body(
+	return app.Button().Class(className+" action-icon-btn").Attr("aria-label", label).Attr("title", label).Body(
 		app.Img().Class("action-icon").Src(src).Alt(""),
 	)
 }
 
 func (r *Root) iconLink(className, src, label, href string) app.HTMLA {
-	return app.A().Class(className + " action-icon-btn").Href(href).Attr("aria-label", label).Attr("title", label).Body(
+	return app.A().Class(className+" action-icon-btn").Href(href).Attr("aria-label", label).Attr("title", label).Body(
 		app.Img().Class("action-icon").Src(src).Alt(""),
 	)
 }
@@ -377,6 +377,7 @@ func (r *Root) setFocus(focusKey string) app.EventHandler {
 
 func (r *Root) advanceHalf(ctx app.Context, _ app.Event) {
 	r.book.AdvanceHalf()
+	r.syncDraftBatter(true)
 	r.clearMessage()
 	r.formVersion++
 	r.persist()
@@ -385,6 +386,7 @@ func (r *Root) advanceHalf(ctx app.Context, _ app.Event) {
 
 func (r *Root) retreatHalf(ctx app.Context, _ app.Event) {
 	r.book.RetreatHalf()
+	r.syncDraftBatter(true)
 	r.clearMessage()
 	r.formVersion++
 	r.persist()
@@ -417,12 +419,17 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 		r.book.Entries = append(r.book.Entries, entry)
 		r.statusMessage("Event saved.")
 	}
+	r.book.HydrateMemory()
 	if wasEditing {
 		r.draft.Reset()
 	} else if entry.Mode == scorebook.ModeRun {
 		r.draft.PrepareForNextRunnerEvent()
 	} else {
 		r.draft.PrepareForNextPlateAppearance()
+		r.syncDraftBatter(true)
+	}
+	if wasEditing {
+		r.syncDraftBatter(true)
 	}
 	r.focused = ""
 	r.formVersion++
@@ -442,6 +449,7 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 
 func (r *Root) cancelEdit(ctx app.Context, _ app.Event) {
 	r.draft.Reset()
+	r.syncDraftBatter(true)
 	r.statusMessage("Edit canceled.")
 	r.formVersion++
 	r.persist()
@@ -473,9 +481,13 @@ func (r *Root) deleteEntry(id string) app.EventHandler {
 			}
 		}
 		r.book.Entries = entries
+		r.book.HydrateMemory()
 		if r.draft.EditingID == id {
 			r.draft.Reset()
+			r.syncDraftBatter(true)
 			r.formVersion++
+		} else if r.draft.EditingID == "" {
+			r.syncDraftBatter(false)
 		}
 		r.statusMessage("Event deleted.")
 		r.persist()
@@ -575,7 +587,7 @@ func (r *Root) restore() {
 	if book.Context.Half == "" {
 		book.Context.Half = scorebook.Top
 	}
-	book.HydratePitcherMemory()
+	book.HydrateMemory()
 	r.book = book
 }
 
@@ -595,6 +607,7 @@ func (r *Root) clearMessage() {
 func (r *Root) newGame(ctx app.Context, _ app.Event) {
 	r.book = scorebook.NewBook()
 	r.draft.Reset()
+	r.syncDraftBatter(true)
 	r.focused = ""
 	r.statusMessage("New game started.")
 	r.formVersion++
@@ -626,4 +639,14 @@ func shortContext(entry scorebook.EventEntry) string {
 		half = "B"
 	}
 	return fmt.Sprintf("%d%s", entry.Inning, half)
+}
+
+func (r *Root) syncDraftBatter(force bool) {
+	if r.draft.EditingID != "" {
+		return
+	}
+	if !force && strings.TrimSpace(r.draft.Batter) != "" {
+		return
+	}
+	r.draft.Batter = r.book.RememberedBatter()
 }

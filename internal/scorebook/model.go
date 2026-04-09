@@ -9,8 +9,9 @@ import (
 type Half string
 
 const (
-	Top    Half = "top"
-	Bottom Half = "bottom"
+	Top          Half = "top"
+	Bottom       Half = "bottom"
+	BattingSlots      = 9
 )
 
 type EntryMode string
@@ -62,6 +63,10 @@ type Book struct {
 	Context       GameContext  `json:"context"`
 	TopPitcher    string       `json:"topPitcher,omitempty"`
 	BottomPitcher string       `json:"bottomPitcher,omitempty"`
+	AwayOrder     []string     `json:"awayOrder,omitempty"`
+	HomeOrder     []string     `json:"homeOrder,omitempty"`
+	AwaySpot      int          `json:"awaySpot,omitempty"`
+	HomeSpot      int          `json:"homeSpot,omitempty"`
 	Entries       []EventEntry `json:"entries"`
 }
 
@@ -71,7 +76,9 @@ func NewBook() Book {
 			Inning: 1,
 			Half:   Top,
 		},
-		Entries: []EventEntry{},
+		AwayOrder: makeBattingOrder(),
+		HomeOrder: makeBattingOrder(),
+		Entries:   []EventEntry{},
 	}
 }
 
@@ -111,6 +118,8 @@ func (b *Book) SyncPitcherMemory() {
 }
 
 func (b *Book) HydratePitcherMemory() {
+	b.TopPitcher = ""
+	b.BottomPitcher = ""
 	for _, entry := range b.Entries {
 		switch entry.Half {
 		case Bottom:
@@ -122,11 +131,105 @@ func (b *Book) HydratePitcherMemory() {
 	b.SyncPitcherMemory()
 }
 
+func (b *Book) HydrateBattingMemory() {
+	b.AwayOrder = makeBattingOrder()
+	b.HomeOrder = makeBattingOrder()
+	b.AwaySpot = 0
+	b.HomeSpot = 0
+
+	for _, entry := range b.Entries {
+		b.RecordPlateAppearance(entry)
+	}
+}
+
+func (b *Book) HydrateMemory() {
+	b.HydratePitcherMemory()
+	b.HydrateBattingMemory()
+}
+
 func (b Book) rememberedPitcher(half Half) string {
 	if half == Bottom {
 		return b.BottomPitcher
 	}
 	return b.TopPitcher
+}
+
+func (b Book) RememberedBatter() string {
+	order, spot := b.battingMemory(b.Context.Half)
+	if spot < 0 || spot >= BattingSlots || spot >= len(order) {
+		return ""
+	}
+	return order[spot]
+}
+
+func (b *Book) RecordPlateAppearance(entry EventEntry) {
+	if entry.Mode != ModePlay {
+		return
+	}
+
+	batter := strings.TrimSpace(entry.Batter)
+	if batter == "" {
+		return
+	}
+
+	order, spot := b.battingMemoryRef(entry.Half)
+	*order = normalizeBattingOrder(*order)
+	currentSpot := normalizeSpot(*spot)
+	index := indexOfBatter(*order, batter)
+	if index >= 0 {
+		*spot = normalizeSpot(index + 1)
+		return
+	}
+
+	(*order)[currentSpot] = batter
+	*spot = normalizeSpot(currentSpot + 1)
+}
+
+func (b Book) battingMemory(half Half) ([]string, int) {
+	if half == Bottom {
+		return b.HomeOrder, b.HomeSpot
+	}
+	return b.AwayOrder, b.AwaySpot
+}
+
+func (b *Book) battingMemoryRef(half Half) (*[]string, *int) {
+	if half == Bottom {
+		return &b.HomeOrder, &b.HomeSpot
+	}
+	return &b.AwayOrder, &b.AwaySpot
+}
+
+func indexOfBatter(order []string, batter string) int {
+	for i, candidate := range order {
+		if candidate == batter {
+			return i
+		}
+	}
+	return -1
+}
+
+func makeBattingOrder() []string {
+	return make([]string, BattingSlots)
+}
+
+func normalizeBattingOrder(order []string) []string {
+	if len(order) == BattingSlots {
+		return order
+	}
+	normalized := makeBattingOrder()
+	copy(normalized, order)
+	return normalized
+}
+
+func normalizeSpot(spot int) int {
+	if BattingSlots == 0 {
+		return 0
+	}
+	spot %= BattingSlots
+	if spot < 0 {
+		spot += BattingSlots
+	}
+	return spot
 }
 
 func (d EventDraft) ToEntry(ctx GameContext) EventEntry {
