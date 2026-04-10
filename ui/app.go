@@ -76,20 +76,20 @@ func (r *Root) renderGameInfo(exportText string) app.UI {
 					OnInput(r.bindString(&r.book.Meta.AwayTeam, "away-team")).
 					OnFocus(r.setFocus("away-team")),
 			),
-			r.iconButton("btn danger game-new", "/web/icon-clear-all.svg", "New Game").OnClick(r.newGame),
 			app.Div().Class("field game-date").Body(
 				app.Label().Class("field-label").Text("Game Date"),
 				app.Input().ID(r.fieldID("game-date")).Class("input").Type("date").Value(r.book.Meta.GameDate).
 					OnInput(r.bindString(&r.book.Meta.GameDate, "game-date")).
 					OnFocus(r.setFocus("game-date")),
 			),
-			r.iconButton("btn game-copy", "/web/icon-copy.svg", "Copy").OnClick(r.copyExport),
 			app.Div().Class("field game-home").Body(
 				app.Label().Class("field-label").Text("Home Team"),
 				app.Input().ID(r.fieldID("home-team")).Class("input").Type("text").Value(r.book.Meta.HomeTeam).Placeholder("e.g. Red Sox").
 					OnInput(r.bindString(&r.book.Meta.HomeTeam, "home-team")).
 					OnFocus(r.setFocus("home-team")),
 			),
+			r.iconButton("btn danger game-new", "/web/icon-clear-all.svg", "New Game").OnClick(r.newGame),
+			r.iconButton("btn game-copy", "/web/icon-copy.svg", "Copy").OnClick(r.copyExport),
 			r.iconLink("btn game-email", "/web/icon-email.svg", "Email", scorebook.MailtoLink(r.book)),
 		),
 		app.Details().Class("export-details").Body(
