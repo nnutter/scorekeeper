@@ -459,6 +459,7 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 	if wasEditing {
 		r.syncDraftBatter(true)
 	}
+	shouldFocusBatter := strings.TrimSpace(r.book.RememberedBatter()) == ""
 	r.focused = ""
 	r.formVersion++
 	r.persist()
@@ -470,6 +471,10 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 		clearEntryFields(false, false)
 	}
 	ctx.Update()
+	if shouldFocusBatter {
+		r.focused = "batter"
+		focusEntryField(r.fieldID("batter"))
+	}
 	if stickToBottom {
 		scrollPageToBottom()
 	}

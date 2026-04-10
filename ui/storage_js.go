@@ -81,6 +81,24 @@ func clearEntryFields(keepBatter, keepPitches bool) {
 	}
 }
 
+func focusEntryField(id string) {
+	window := js.Global().Get("window")
+	document := js.Global().Get("document")
+	if window.IsUndefined() || window.IsNull() || document.IsUndefined() || document.IsNull() {
+		return
+	}
+	var callback js.Func
+	callback = js.FuncOf(func(this js.Value, args []js.Value) any {
+		node := document.Call("getElementById", id)
+		if !node.IsUndefined() && !node.IsNull() {
+			node.Call("focus")
+		}
+		callback.Release()
+		return nil
+	})
+	window.Call("requestAnimationFrame", callback)
+}
+
 func isNearPageBottom(threshold float64) bool {
 	window := js.Global().Get("window")
 	if window.IsUndefined() || window.IsNull() {
