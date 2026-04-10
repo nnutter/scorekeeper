@@ -256,6 +256,13 @@ func (r *Root) renderTokenGroup(rows [][]string, target string) app.UI {
 
 func (r *Root) tokenToneClass(target, token string) string {
 	switch target {
+	case "pitches":
+		switch token {
+		case "B", "H", "I", "V":
+			return "token-good"
+		case "A", "C", "F", "K", "L", "M", "O", "P", "Q", "R", "S", "T", "U", "X", "Y":
+			return "token-bad"
+		}
 	case "batter-event":
 		switch token {
 		case "S", "D", "T", "HR", "DGR", "W", "IW", "HP", "E", "FC", "FLE", "SF", "SH":
