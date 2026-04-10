@@ -614,7 +614,7 @@ button, a, input, textarea, summary {
     align-items: stretch;
   }
   .log-row {
-    grid-template-columns: 44px 44px 56px 64px minmax(0, 1fr) 88px;
+    grid-template-columns: 35px 31px 40px 102px minmax(0, 1fr) 88px;
     font-size: 0.82rem;
   }
 }
