@@ -247,11 +247,39 @@ func (r *Root) renderTokenGroup(rows [][]string, target string) app.UI {
 		buttons := make([]app.UI, 0, len(row))
 		for _, token := range row {
 			t := token
-			buttons = append(buttons, app.Button().Class("btn token").Text(t).OnClick(r.insertToken(target, t)))
+			buttons = append(buttons, app.Button().Class("btn token "+r.tokenToneClass(target, t)).Text(t).OnClick(r.insertToken(target, t)))
 		}
 		uiRows = append(uiRows, app.Div().Class("keyboard-row").Body(buttons...))
 	}
 	return app.Div().Class("keyboard-group").Body(uiRows...)
+}
+
+func (r *Root) tokenToneClass(target, token string) string {
+	switch target {
+	case "batter-event":
+		switch token {
+		case "S", "D", "T", "HR", "DGR", "W", "IW", "HP", "E", "FC", "FLE", "SF", "SH":
+			return "token-good"
+		case "K", "GDP", "LDP", "FO":
+			return "token-bad"
+		}
+	case "advances":
+		switch {
+		case strings.Contains(token, "X"):
+			return "token-bad"
+		case strings.Contains(token, "-") || token == "E" || token == "TH" || token == "RBI":
+			return "token-good"
+		}
+	case "runner-event":
+		switch token {
+		case "SB2", "SB3", "SBH", "WP", "BK", "DI", "OA", "PB":
+			return "token-good"
+		case "CS2", "CS3", "CSH", "PO1", "PO2", "PO3", "POCS2", "POCS3", "POCSH":
+			return "token-bad"
+		}
+	}
+
+	return "token-neutral"
 }
 
 func (r *Root) renderLog() app.UI {

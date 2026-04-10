@@ -14,6 +14,9 @@ func CSS() string {
   --accent-soft: #d9efef;
   --warm: #bd632f;
   --danger: #a33636;
+  --token-good: #2f6fbe;
+  --token-bad: #b03a48;
+  --token-neutral: #5e5a53;
   --shadow: 0 24px 50px rgba(56, 40, 20, 0.12);
 }
 * { box-sizing: border-box; }
@@ -314,6 +317,15 @@ button, a, input, textarea, summary {
   padding: 5px 8px;
   text-align: center;
   white-space: nowrap;
+}
+.token.token-good {
+  color: var(--token-good);
+}
+.token.token-bad {
+  color: var(--token-bad);
+}
+.token.token-neutral {
+  color: var(--token-neutral);
 }
 .notice {
   padding: 4px 8px;
