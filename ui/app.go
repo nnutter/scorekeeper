@@ -124,16 +124,16 @@ func (r *Root) renderContext() app.UI {
 
 func (r *Root) renderEntry() app.UI {
 	return app.Section().Class("panel").Body(
-		app.If(r.message != "", func() app.UI {
-			class := "notice compact"
-			if r.messageKind == "status" {
-				class += " status"
-			}
-			return app.Div().Class(class).Text(r.message)
-		}),
 		app.Div().ID(r.fieldID("entry-grid")).Class(r.entryGridClass()).Body(r.renderEntryFields()...),
 		app.Div().Class("actions-row").Body(
 			r.saveIconButton().OnClick(r.saveEntry),
+			app.If(r.message != "", func() app.UI {
+				class := "notice compact action-notice"
+				if r.messageKind == "status" {
+					class += " status"
+				}
+				return app.Div().Class(class).Text(r.message)
+			}),
 			app.If(r.draft.EditingID != "", func() app.UI {
 				return r.iconButton("btn", "/web/icon-cancel.svg", "Cancel Edit").OnClick(r.cancelEdit)
 			}),

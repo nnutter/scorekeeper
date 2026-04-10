@@ -336,6 +336,9 @@ button, a, input, textarea, summary {
   font-size: 0.78rem;
   justify-self: start;
 }
+.action-notice {
+  align-self: center;
+}
 .notice.status {
   background: #e7f6f0;
   border-color: rgba(13,92,99,0.22);
