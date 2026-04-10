@@ -87,11 +87,19 @@ func focusEntryField(id string) {
 	if window.IsUndefined() || window.IsNull() || document.IsUndefined() || document.IsNull() {
 		return
 	}
+	framesLeft := 4
 	var callback js.Func
 	callback = js.FuncOf(func(this js.Value, args []js.Value) any {
 		node := document.Call("getElementById", id)
 		if !node.IsUndefined() && !node.IsNull() {
 			node.Call("focus")
+			callback.Release()
+			return nil
+		}
+		framesLeft--
+		if framesLeft > 0 {
+			window.Call("requestAnimationFrame", callback)
+			return nil
 		}
 		callback.Release()
 		return nil
