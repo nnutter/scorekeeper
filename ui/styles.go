@@ -528,14 +528,14 @@ button, a, input, textarea, summary {
   }
   .context-layout {
     display: grid;
-    grid-template-columns: 70px 34px 34px 10px minmax(0, 1fr);
+    grid-template-columns: 86px 34px 34px 10px minmax(0, 1fr);
     grid-template-areas: "inning actions actions . pitcher";
     gap: 6px;
     align-items: end;
   }
   .context-inning {
     grid-area: inning;
-    max-width: 72px;
+    max-width: 80px;
   }
   .context-inning .field-label,
   .context-actions label,
