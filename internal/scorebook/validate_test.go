@@ -38,6 +38,17 @@ func TestValidateAllowsStrikeoutWithSteal(t *testing.T) {
 	}
 }
 
+func TestValidateAllowsCombinedPlayWithMultipleRunnerEvents(t *testing.T) {
+	meta := GameMeta{AwayTeam: "Away", HomeTeam: "Home", GameDate: "2026-04-01"}
+	ctx := GameContext{Inning: 1, Half: Top, Pitcher: "45S"}
+	draft := EventDraft{Batter: "12J", BatterEvent: "W", RunnerEvent: "SB2;E2"}
+
+	issues := Validate(meta, ctx, draft)
+	if len(issues) != 0 {
+		t.Fatalf("expected no issues, got %v", issues)
+	}
+}
+
 func TestValidateRejectsUnsupportedCombinedEvent(t *testing.T) {
 	meta := GameMeta{AwayTeam: "Away", HomeTeam: "Home", GameDate: "2026-04-01"}
 	ctx := GameContext{Inning: 1, Half: Top, Pitcher: "45S"}

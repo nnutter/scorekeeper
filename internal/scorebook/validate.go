@@ -49,6 +49,20 @@ func validCombinedEvent(batterEvent, runnerEvent string) bool {
 }
 
 func validCombinedRunnerEvent(runnerEvent string) bool {
+	parts := strings.Split(runnerEvent, ";")
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if !isAllowedCombinedRunnerToken(part) {
+			return false
+		}
+	}
+	return true
+}
+
+func isAllowedCombinedRunnerToken(runnerEvent string) bool {
 	return strings.HasPrefix(runnerEvent, "SB") ||
 		strings.HasPrefix(runnerEvent, "CS") ||
 		runnerEvent == "OA" ||
