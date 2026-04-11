@@ -687,7 +687,7 @@ func (r *Root) appendBatterEventToken(token string) {
 		r.draft.BatterEvent = token + batterEventSuffix(r.draft.BatterEvent)
 		return
 	}
-	r.draft.BatterEvent += token
+	r.draft.BatterEvent += formatBatterEventToken(r.draft.BatterEvent, token)
 }
 
 func (r *Root) appendRunnerEventToken(token string) {
@@ -718,6 +718,25 @@ func batterEventSuffix(event string) string {
 		}
 	}
 	return ""
+}
+
+func formatBatterEventToken(current, token string) string {
+	if !isSlashPrefixedBatterEventToken(token) {
+		return token
+	}
+	if strings.HasSuffix(current, "/") {
+		return token
+	}
+	return "/" + token
+}
+
+func isSlashPrefixedBatterEventToken(token string) bool {
+	switch token {
+	case "SF", "SH", "GDP", "LDP", "FO", "G", "L", "P", "F":
+		return true
+	default:
+		return false
+	}
 }
 
 func (r *Root) entryGridClass() string { return "entry-grid combined-grid" }
