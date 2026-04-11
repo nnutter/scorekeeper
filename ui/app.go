@@ -628,7 +628,7 @@ func (r *Root) insertToken(target, token string) app.EventHandler {
 		case "pitches":
 			r.draft.Pitches += token
 		case "batter-event":
-			r.draft.BatterEvent += token
+			r.appendBatterEventToken(token)
 		case "advances":
 			r.appendAdvanceToken(token)
 		case "runner-event":
@@ -653,7 +653,7 @@ func (r *Root) applyFocusedFallback(token string) {
 	case "pitches":
 		r.draft.Pitches += token
 	case "batter-event":
-		r.draft.BatterEvent += token
+		r.appendBatterEventToken(token)
 	case "advances":
 		r.appendAdvanceToken(token)
 	case "runner-event":
@@ -682,6 +682,14 @@ func (r *Root) appendAdvanceToken(token string) {
 	r.draft.Advances += ";" + token
 }
 
+func (r *Root) appendBatterEventToken(token string) {
+	if isExclusiveBatterEventToken(token) {
+		r.draft.BatterEvent = token + batterEventSuffix(r.draft.BatterEvent)
+		return
+	}
+	r.draft.BatterEvent += token
+}
+
 func (r *Root) appendRunnerEventToken(token string) {
 	if strings.TrimSpace(r.draft.RunnerEvent) == "" {
 		r.draft.RunnerEvent = token
@@ -692,6 +700,24 @@ func (r *Root) appendRunnerEventToken(token string) {
 		return
 	}
 	r.draft.RunnerEvent += ";" + token
+}
+
+func isExclusiveBatterEventToken(token string) bool {
+	switch token {
+	case "K", "S", "D", "T", "HR", "DGR", "W", "IW", "HP", "E", "FC", "FLE":
+		return true
+	default:
+		return false
+	}
+}
+
+func batterEventSuffix(event string) string {
+	for i, r := range event {
+		if r == '(' || r == '/' {
+			return event[i:]
+		}
+	}
+	return ""
 }
 
 func (r *Root) entryGridClass() string { return "entry-grid combined-grid" }
