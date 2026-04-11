@@ -281,3 +281,11 @@ func TestPrepareForNextPlateAppearanceClearsEntryFields(t *testing.T) {
 		t.Fatalf("expected plate appearance fields cleared: %+v", draft)
 	}
 }
+
+func TestEventEntryEventTextCombinesBatterAndRunnerEvents(t *testing.T) {
+	entry := EventEntry{BatterEvent: "K", RunnerEvent: "SB2"}
+
+	if got := entry.EventText(); got != "K+SB2" {
+		t.Fatalf("event text = %q, want K+SB2", got)
+	}
+}

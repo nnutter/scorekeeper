@@ -25,6 +25,17 @@ func TestExportTextIncludesNotes(t *testing.T) {
 				CreatedAt:   time.Unix(1, 0),
 			},
 			{
+				ID:          "combo",
+				Mode:        ModePlay,
+				Inning:      1,
+				Half:        Top,
+				Pitcher:     "45S",
+				Batter:      "13K",
+				BatterEvent: "K",
+				RunnerEvent: "SB2",
+				CreatedAt:   time.Unix(1, 500),
+			},
+			{
 				ID:          "2",
 				Mode:        ModeRun,
 				Inning:      1,
@@ -41,6 +52,7 @@ func TestExportTextIncludesNotes(t *testing.T) {
 	checks := []string{
 		"game,2026-04-01,away=Away Club,home=Home Club",
 		"play,1,top,pitcher=45S,batter=12J,pitches=CBX,event=S7,adv=1-3",
+		"play,1,top,pitcher=45S,batter=13K,event=K+SB2",
 		"note,1,top,\"lined into left\"",
 		"run,1,top,pitcher=45S,batter=12J,event=SB2",
 	}

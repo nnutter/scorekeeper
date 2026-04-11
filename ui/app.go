@@ -701,10 +701,7 @@ func (r *Root) saveLabel() string {
 }
 
 func (r *Root) logEventText(entry scorebook.EventEntry) string {
-	if entry.Mode == scorebook.ModeRun {
-		return entry.RunnerEvent
-	}
-	parts := []string{entry.BatterEvent}
+	parts := []string{entry.EventText()}
 	if entry.Advances != "" {
 		parts = append(parts, entry.Advances)
 	}

@@ -27,7 +27,18 @@ func TestValidateRequiresOneEventType(t *testing.T) {
 	}
 }
 
-func TestValidateRejectsBothEventTypes(t *testing.T) {
+func TestValidateAllowsStrikeoutWithSteal(t *testing.T) {
+	meta := GameMeta{AwayTeam: "Away", HomeTeam: "Home", GameDate: "2026-04-01"}
+	ctx := GameContext{Inning: 1, Half: Top, Pitcher: "45S"}
+	draft := EventDraft{Batter: "12J", BatterEvent: "K", RunnerEvent: "SB2"}
+
+	issues := Validate(meta, ctx, draft)
+	if len(issues) != 0 {
+		t.Fatalf("expected no issues, got %v", issues)
+	}
+}
+
+func TestValidateRejectsUnsupportedCombinedEvent(t *testing.T) {
 	meta := GameMeta{AwayTeam: "Away", HomeTeam: "Home", GameDate: "2026-04-01"}
 	ctx := GameContext{Inning: 1, Half: Top, Pitcher: "45S"}
 	draft := EventDraft{Batter: "12J", BatterEvent: "S7", RunnerEvent: "SB2"}
@@ -36,8 +47,19 @@ func TestValidateRejectsBothEventTypes(t *testing.T) {
 	if len(issues) == 0 {
 		t.Fatal("expected validation issue when both event types are set")
 	}
-	if issues[0] != "Enter either a batter event or a base-running event, not both." {
+	if issues[0] != "Only K, W, and IW may be combined with SB, CS, OA, PO, PB, WP, or E base-running events." {
 		t.Fatalf("unexpected issue: %v", issues)
+	}
+}
+
+func TestValidateRejectsDisallowedRunnerEventForCombinedPlay(t *testing.T) {
+	meta := GameMeta{AwayTeam: "Away", HomeTeam: "Home", GameDate: "2026-04-01"}
+	ctx := GameContext{Inning: 1, Half: Top, Pitcher: "45S"}
+	draft := EventDraft{Batter: "12J", BatterEvent: "W", RunnerEvent: "BK"}
+
+	issues := Validate(meta, ctx, draft)
+	if len(issues) == 0 {
+		t.Fatal("expected validation issue for disallowed combined runner event")
 	}
 }
 

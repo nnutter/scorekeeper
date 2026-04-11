@@ -313,11 +313,21 @@ func (d *EventDraft) PrepareForNextPlateAppearance() {
 	d.Reset()
 }
 
-func (e EventEntry) Summary() string {
-	if e.Mode == ModeRun {
-		return fmt.Sprintf("%s | batter %s | %s", strings.Title(string(e.Half)), e.Batter, e.RunnerEvent)
+func (e EventEntry) EventText() string {
+	batterEvent := strings.TrimSpace(e.BatterEvent)
+	runnerEvent := strings.TrimSpace(e.RunnerEvent)
+
+	if batterEvent == "" {
+		return runnerEvent
 	}
-	summary := fmt.Sprintf("%s | batter %s | %s", strings.Title(string(e.Half)), e.Batter, e.BatterEvent)
+	if runnerEvent == "" {
+		return batterEvent
+	}
+	return batterEvent + "+" + runnerEvent
+}
+
+func (e EventEntry) Summary() string {
+	summary := fmt.Sprintf("%s | batter %s | %s", strings.Title(string(e.Half)), e.Batter, e.EventText())
 	if e.Advances != "" {
 		summary += " | " + e.Advances
 	}

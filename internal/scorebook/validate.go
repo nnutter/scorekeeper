@@ -29,12 +29,31 @@ func Validate(meta GameMeta, ctx GameContext, draft EventDraft) []string {
 	if batterEvent == "" && runnerEvent == "" {
 		issues = append(issues, "Enter a batter event or a base-running event.")
 	}
-	if batterEvent != "" && runnerEvent != "" {
-		issues = append(issues, "Enter either a batter event or a base-running event, not both.")
+	if batterEvent != "" && runnerEvent != "" && !validCombinedEvent(batterEvent, runnerEvent) {
+		issues = append(issues, "Only K, W, and IW may be combined with SB, CS, OA, PO, PB, WP, or E base-running events.")
 	}
 	if strings.TrimSpace(draft.Pitches) != "" && !ValidPitchString(draft.Pitches) {
 		issues = append(issues, "Pitches contains a character outside simplified Retrosheet pitch syntax.")
 	}
 
 	return issues
+}
+
+func validCombinedEvent(batterEvent, runnerEvent string) bool {
+	switch batterEvent {
+	case "K", "W", "IW":
+		return validCombinedRunnerEvent(runnerEvent)
+	default:
+		return false
+	}
+}
+
+func validCombinedRunnerEvent(runnerEvent string) bool {
+	return strings.HasPrefix(runnerEvent, "SB") ||
+		strings.HasPrefix(runnerEvent, "CS") ||
+		runnerEvent == "OA" ||
+		strings.HasPrefix(runnerEvent, "PO") ||
+		runnerEvent == "PB" ||
+		runnerEvent == "WP" ||
+		strings.HasPrefix(runnerEvent, "E")
 }

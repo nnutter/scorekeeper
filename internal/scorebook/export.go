@@ -13,7 +13,7 @@ func ExportText(book Book) string {
 
 	for _, entry := range book.Entries {
 		if entry.Mode == ModeRun {
-			lines = append(lines, fmt.Sprintf("run,%d,%s,pitcher=%s,batter=%s,event=%s", entry.Inning, entry.Half, safe(entry.Pitcher), safe(entry.Batter), safe(entry.RunnerEvent)))
+			lines = append(lines, fmt.Sprintf("run,%d,%s,pitcher=%s,batter=%s,event=%s", entry.Inning, entry.Half, safe(entry.Pitcher), safe(entry.Batter), safe(entry.EventText())))
 		} else {
 			parts := []string{
 				fmt.Sprintf("play,%d,%s", entry.Inning, entry.Half),
@@ -23,7 +23,7 @@ func ExportText(book Book) string {
 			if entry.Pitches != "" {
 				parts = append(parts, "pitches="+safe(entry.Pitches))
 			}
-			parts = append(parts, "event="+safe(entry.BatterEvent))
+			parts = append(parts, "event="+safe(entry.EventText()))
 			if entry.Advances != "" {
 				parts = append(parts, "adv="+safe(entry.Advances))
 			}
