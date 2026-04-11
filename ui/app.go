@@ -14,9 +14,11 @@ type Root struct {
 
 	book        scorebook.Book
 	draft       scorebook.EventDraft
+	editContext scorebook.GameContext
 	message     string
 	focused     string
 	hasLoaded   bool
+	hasEditBase bool
 	messageKind string
 	formVersion int
 	mobileKeys  string
@@ -482,6 +484,7 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 	}
 	r.book.HydrateMemory()
 	if wasEditing {
+		r.restoreEditContext()
 		r.draft.Reset()
 	} else if entry.Mode == scorebook.ModeRun {
 		r.draft.PrepareForNextRunnerEvent()
@@ -514,6 +517,7 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 }
 
 func (r *Root) cancelEdit(ctx app.Context, _ app.Event) {
+	r.restoreEditContext()
 	r.draft.Reset()
 	r.syncDraftBatter(true)
 	r.statusMessage("Edit canceled.")
@@ -527,6 +531,15 @@ func (r *Root) editEntry(id string) app.EventHandler {
 	return func(ctx app.Context, _ app.Event) {
 		for _, entry := range r.book.Entries {
 			if entry.ID == id {
+				if !r.hasEditBase {
+					r.editContext = r.book.Context
+					r.hasEditBase = true
+				}
+				r.book.Context = scorebook.GameContext{
+					Inning:  entry.Inning,
+					Half:    entry.Half,
+					Pitcher: entry.Pitcher,
+				}
 				r.draft.LoadFromEntry(entry)
 				r.statusMessage("Editing event.")
 				r.formVersion++
@@ -549,6 +562,7 @@ func (r *Root) deleteEntry(id string) app.EventHandler {
 		r.book.Entries = entries
 		r.book.HydrateMemory()
 		if r.draft.EditingID == id {
+			r.restoreEditContext()
 			r.draft.Reset()
 			r.syncDraftBatter(true)
 			r.formVersion++
@@ -559,6 +573,14 @@ func (r *Root) deleteEntry(id string) app.EventHandler {
 		r.persist()
 		ctx.Update()
 	}
+}
+
+func (r *Root) restoreEditContext() {
+	if !r.hasEditBase {
+		return
+	}
+	r.book.Context = r.editContext
+	r.hasEditBase = false
 }
 
 func (r *Root) insertToken(target, token string) app.EventHandler {
