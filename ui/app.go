@@ -121,15 +121,15 @@ func (r *Root) renderContext() app.UI {
 				app.Div().Class("field").Body(
 					app.Label().Class("field-label").Text(fmt.Sprintf("Pitcher • Batting %s", ordinal(r.book.BattingPosition()))),
 					app.Div().Class("context-pitcher-row").Body(
-						app.Div().Class("context-batting-row").Body(
-							app.Button().Class("btn navy context-step batting-step").Text("-").OnClick(r.retreatBatter),
-							app.Button().Class("btn navy context-step batting-step").Text("+").OnClick(r.advanceBatter),
-						),
 						app.Input().ID(r.fieldID("pitcher")).Class("input").Type("text").Value(r.book.Context.Pitcher).Placeholder("e.g. 45S").
 							Attr("autocapitalize", "characters").
 							Spellcheck(false).
 							OnInput(r.bindString(&r.book.Context.Pitcher, "pitcher")).
 							OnFocus(r.setFocus("pitcher")),
+						app.Div().Class("context-batting-row").Body(
+							app.Button().Class("btn navy context-step batting-step").Text("-").OnClick(r.retreatBatter),
+							app.Button().Class("btn navy context-step batting-step").Text("+").OnClick(r.advanceBatter),
+						),
 					),
 				),
 			),

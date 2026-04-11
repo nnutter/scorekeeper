@@ -567,8 +567,8 @@ button, a, input, textarea, summary {
   }
   .context-layout {
     display: grid;
-    grid-template-columns: 88px 74px minmax(0, 1fr) 162px;
-    grid-template-areas: "inning actions . pitcher";
+    grid-template-columns: 162px minmax(0, 1fr) 74px 88px;
+    grid-template-areas: "pitcher . actions inning";
     gap: 4px;
     align-items: end;
   }
@@ -594,7 +594,7 @@ button, a, input, textarea, summary {
     max-width: 162px;
   }
   .context-pitcher-row {
-    grid-template-columns: 74px 88px;
+    grid-template-columns: 88px 74px;
     gap: 4px;
   }
   .context-chip,
