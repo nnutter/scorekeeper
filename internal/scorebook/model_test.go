@@ -38,6 +38,47 @@ func TestRetreatHalf(t *testing.T) {
 	}
 }
 
+func TestAdvanceBattingPositionWrapsWithinHalf(t *testing.T) {
+	book := NewBook()
+
+	book.AdvanceBattingPosition()
+	if got := book.BattingPosition(); got != 2 {
+		t.Fatalf("batting position after advance = %d, want 2", got)
+	}
+
+	book.AwaySpot = 8
+	book.AdvanceBattingPosition()
+	if got := book.BattingPosition(); got != 1 {
+		t.Fatalf("batting position after wrap = %d, want 1", got)
+	}
+
+	book.Context.Half = Bottom
+	if got := book.BattingPosition(); got != 1 {
+		t.Fatalf("bottom batting position should be independent = %d, want 1", got)
+	}
+}
+
+func TestRetreatBattingPositionWrapsWithinHalf(t *testing.T) {
+	book := NewBook()
+
+	book.RetreatBattingPosition()
+	if got := book.BattingPosition(); got != 9 {
+		t.Fatalf("batting position after retreat = %d, want 9", got)
+	}
+
+	book.Context.Half = Bottom
+	book.HomeSpot = 3
+	book.RetreatBattingPosition()
+	if got := book.BattingPosition(); got != 3 {
+		t.Fatalf("bottom batting position after retreat = %d, want 3", got)
+	}
+
+	book.Context.Half = Top
+	if got := book.BattingPosition(); got != 9 {
+		t.Fatalf("top batting position should be unchanged = %d, want 9", got)
+	}
+}
+
 func TestHalfSwitchRestoresRememberedPitchers(t *testing.T) {
 	book := NewBook()
 	book.Context.Pitcher = "H1"

@@ -83,7 +83,7 @@ button, a, input, textarea, summary {
 }
 .event-layout {
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr);
+  grid-template-columns: 156px minmax(0, 1fr);
   gap: 8px;
   align-items: start;
 }
@@ -166,6 +166,17 @@ button, a, input, textarea, summary {
 .context-layout {
   margin-top: 0;
 }
+.context-pitcher-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px;
+  align-items: center;
+}
+.context-batting-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 .combined-grid {
   grid-template-columns: 0.95fr 0.9fr 1.1fr 1fr 1.1fr;
   align-items: end;
@@ -217,6 +228,11 @@ button, a, input, textarea, summary {
   border-color: var(--warm);
   color: #fff8f3;
 }
+.btn.navy {
+  background: #183a66;
+  border-color: #183a66;
+  color: #f7fbff;
+}
 .btn.ghost.active {
   background: var(--accent-soft);
   border-color: rgba(13,92,99,0.38);
@@ -241,13 +257,21 @@ button, a, input, textarea, summary {
 }
 .context-action-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(2, 35px);
+  gap: 4px;
 }
 .context-step {
-  width: 100%;
+  width: 35px;
+  min-width: 35px;
+  height: 35px;
   padding-left: 0;
   padding-right: 0;
+}
+.batting-step {
+  width: 35px;
+  height: 35px;
+  min-width: 35px;
+  border-radius: 999px;
 }
 .keyboard-group {
   display: grid;
@@ -543,9 +567,9 @@ button, a, input, textarea, summary {
   }
   .context-layout {
     display: grid;
-    grid-template-columns: 88px 34px 34px 10px minmax(0, 1fr);
-    grid-template-areas: "inning actions actions . pitcher";
-    gap: 6px;
+    grid-template-columns: 88px 74px minmax(0, 1fr) 162px;
+    grid-template-areas: "inning actions . pitcher";
+    gap: 4px;
     align-items: end;
   }
   .context-inning {
@@ -561,14 +585,17 @@ button, a, input, textarea, summary {
     grid-area: actions;
   }
   .context-action-row {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 35px);
   }
   .context-pitcher {
     grid-area: pitcher;
     min-width: 0;
-    justify-self: end;
     width: 100%;
-    max-width: 96px;
+    max-width: 162px;
+  }
+  .context-pitcher-row {
+    grid-template-columns: 74px 88px;
+    gap: 4px;
   }
   .context-chip,
   .context-actions .btn,

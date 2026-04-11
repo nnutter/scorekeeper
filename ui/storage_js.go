@@ -81,6 +81,17 @@ func clearEntryFields(keepBatter, keepPitches bool) {
 	}
 }
 
+func clearBatterField() {
+	document := js.Global().Get("document")
+	if document.IsUndefined() || document.IsNull() {
+		return
+	}
+	nodes := document.Call("querySelectorAll", `input[id^="batter-"]`)
+	for i := 0; i < nodes.Length(); i++ {
+		nodes.Index(i).Set("value", "")
+	}
+}
+
 func focusEntryField(id string) {
 	window := js.Global().Get("window")
 	document := js.Global().Get("document")

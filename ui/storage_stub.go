@@ -16,6 +16,8 @@ func copyText(_ string) error {
 
 func clearEntryFields(_, _ bool) {}
 
+func clearBatterField() {}
+
 func focusEntryField(_ string) {}
 
 func initPullToRefresh() {}

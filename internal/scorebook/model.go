@@ -108,6 +108,16 @@ func (b *Book) RetreatHalf() {
 	}
 }
 
+func (b *Book) AdvanceBattingPosition() {
+	_, spot := b.battingMemoryRef(b.Context.Half)
+	*spot = normalizeSpot(*spot + 1)
+}
+
+func (b *Book) RetreatBattingPosition() {
+	_, spot := b.battingMemoryRef(b.Context.Half)
+	*spot = normalizeSpot(*spot - 1)
+}
+
 func (b *Book) SyncPitcherMemory() {
 	switch b.Context.Half {
 	case Bottom:

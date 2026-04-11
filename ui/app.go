@@ -118,7 +118,20 @@ func (r *Root) renderContext() app.UI {
 				),
 			),
 			app.Div().Class("context-pitcher").Body(
-				r.textField("Pitcher", &r.book.Context.Pitcher, "pitcher", "e.g. 45S"),
+				app.Div().Class("field").Body(
+					app.Label().Class("field-label").Text(fmt.Sprintf("Pitcher • Batting %s", ordinal(r.book.BattingPosition()))),
+					app.Div().Class("context-pitcher-row").Body(
+						app.Div().Class("context-batting-row").Body(
+							app.Button().Class("btn navy context-step batting-step").Text("-").OnClick(r.retreatBatter),
+							app.Button().Class("btn navy context-step batting-step").Text("+").OnClick(r.advanceBatter),
+						),
+						app.Input().ID(r.fieldID("pitcher")).Class("input").Type("text").Value(r.book.Context.Pitcher).Placeholder("e.g. 45S").
+							Attr("autocapitalize", "characters").
+							Spellcheck(false).
+							OnInput(r.bindString(&r.book.Context.Pitcher, "pitcher")).
+							OnFocus(r.setFocus("pitcher")),
+					),
+				),
 			),
 		),
 	)
@@ -456,6 +469,30 @@ func (r *Root) retreatHalf(ctx app.Context, _ app.Event) {
 	ctx.Reload()
 }
 
+func (r *Root) advanceBatter(ctx app.Context, _ app.Event) {
+	r.book.AdvanceBattingPosition()
+	r.syncDraftBatter(true)
+	if strings.TrimSpace(r.draft.Batter) == "" {
+		clearBatterField()
+	}
+	r.clearMessage()
+	r.formVersion++
+	r.persist()
+	ctx.Update()
+}
+
+func (r *Root) retreatBatter(ctx app.Context, _ app.Event) {
+	r.book.RetreatBattingPosition()
+	r.syncDraftBatter(true)
+	if strings.TrimSpace(r.draft.Batter) == "" {
+		clearBatterField()
+	}
+	r.clearMessage()
+	r.formVersion++
+	r.persist()
+	ctx.Update()
+}
+
 func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 	stickToBottom := shouldStickToPageBottom()
 
@@ -736,5 +773,10 @@ func (r *Root) syncDraftBatter(force bool) {
 	if !force && strings.TrimSpace(r.draft.Batter) != "" {
 		return
 	}
-	r.draft.Batter = r.book.RememberedBatter()
+	remembered := strings.TrimSpace(r.book.RememberedBatter())
+	if remembered == "" {
+		r.draft.Batter = ""
+		return
+	}
+	r.draft.Batter = remembered
 }
