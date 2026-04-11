@@ -11,8 +11,8 @@ var PitchTokenRows = [][]string{
 var BatterTokenRows = [][]string{
 	{"K", "S", "D", "T", "HR", "DGR"},
 	{"W", "IW", "HP", "E", "FC", "FLE"},
-	{"(", ")", "1", "2", "3", "4", "5"},
-	{"6", "7", "8", "9", ".", ";", "/"},
+	{"(", ")", "1", "2", "3", "4"},
+	{"5", "6", "7", "8", "9", "/"},
 	{"SF", "SH", "GDP", "LDP", "FO"},
 	{"G", "L", "P", "F"},
 }
@@ -22,15 +22,14 @@ var AdvanceTokenRows = [][]string{
 	{"1-2", "1-3", "1-H", "1X2", "1X3", "1XH"},
 	{"2-3", "2-H", "2X3", "2XH"},
 	{"3-H", "3XH"},
-	{";", "(", ")", "E", "TH", "UR", "RBI", "NR"},
+	{"(", ")", "E", "TH", "UR", "RBI"},
 }
 
 var RunnerTokenRows = [][]string{
-	{"SB2", "SB3", "SBH", "WP"},
+	{"SB2", "SB3", "SBH", "WP", "PB"},
 	{"CS2", "CS3", "CSH", "BK"},
 	{"PO1", "PO2", "PO3", "DI"},
 	{"POCS2", "POCS3", "POCSH", "OA"},
-	{"PB", ".", ";", "(", ")"},
 }
 
 const pitchChars = "+*.123>ABCFHIKLMNOPQRSTUVWXYZ"
