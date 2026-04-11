@@ -630,7 +630,7 @@ func (r *Root) insertToken(target, token string) app.EventHandler {
 		case "batter-event":
 			r.draft.BatterEvent += token
 		case "advances":
-			r.draft.Advances += token
+			r.appendAdvanceToken(token)
 		case "runner-event":
 			r.draft.RunnerEvent += token
 		case "note":
@@ -655,7 +655,7 @@ func (r *Root) applyFocusedFallback(token string) {
 	case "batter-event":
 		r.draft.BatterEvent += token
 	case "advances":
-		r.draft.Advances += token
+		r.appendAdvanceToken(token)
 	case "runner-event":
 		r.draft.RunnerEvent += token
 	case "note":
@@ -668,6 +668,18 @@ func (r *Root) applyFocusedFallback(token string) {
 	default:
 		r.draft.Pitches += token
 	}
+}
+
+func (r *Root) appendAdvanceToken(token string) {
+	if strings.TrimSpace(r.draft.Advances) == "" {
+		r.draft.Advances = token
+		return
+	}
+	if strings.HasSuffix(strings.TrimSpace(r.draft.Advances), ";") {
+		r.draft.Advances += token
+		return
+	}
+	r.draft.Advances += ";" + token
 }
 
 func (r *Root) entryGridClass() string { return "entry-grid combined-grid" }
