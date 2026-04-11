@@ -536,6 +536,7 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 	}
 	shouldFocusBatter := strings.TrimSpace(r.book.RememberedBatter()) == ""
 	r.focused = ""
+	r.mobileKeys = "pitches"
 	r.formVersion++
 	r.persist()
 	if wasEditing {
