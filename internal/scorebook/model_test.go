@@ -147,6 +147,32 @@ func TestRecordPlateAppearanceReturnsLearnedBatterAfterWrap(t *testing.T) {
 	}
 }
 
+func TestBattingPositionForEntryReturnsHistoricalSpot(t *testing.T) {
+	book := Book{
+		Context: GameContext{Inning: 3, Half: Bottom},
+		Entries: []EventEntry{
+			{ID: "top-1", Mode: ModePlay, Half: Top, Batter: "A1"},
+			{ID: "top-2", Mode: ModePlay, Half: Top, Batter: "A2"},
+			{ID: "bottom-1", Mode: ModePlay, Half: Bottom, Batter: "H1"},
+			{ID: "top-run", Mode: ModeRun, Half: Top, Batter: "A2", RunnerEvent: "SB2"},
+			{ID: "top-3", Mode: ModePlay, Half: Top, Batter: "A3"},
+		},
+	}
+
+	if got := book.BattingPositionForEntry("top-2"); got != 2 {
+		t.Fatalf("top-2 batting position = %d, want 2", got)
+	}
+	if got := book.BattingPositionForEntry("top-run"); got != 3 {
+		t.Fatalf("top-run batting position = %d, want 3", got)
+	}
+	if got := book.BattingPositionForEntry("bottom-1"); got != 1 {
+		t.Fatalf("bottom-1 batting position = %d, want 1", got)
+	}
+	if got := book.BattingPositionForEntry("missing"); got != 1 {
+		t.Fatalf("missing batting position = %d, want current bottom spot 1", got)
+	}
+}
+
 func TestEventDraftToEntryTrimsValues(t *testing.T) {
 	draft := EventDraft{
 		Batter:      " 12J ",

@@ -162,6 +162,23 @@ func (b Book) RememberedBatter() string {
 	return order[spot]
 }
 
+func (b Book) BattingPosition() int {
+	_, spot := b.battingMemory(b.Context.Half)
+	return normalizeSpot(spot) + 1
+}
+
+func (b Book) BattingPositionForEntry(id string) int {
+	replay := NewBook()
+	for _, entry := range b.Entries {
+		if entry.ID == id {
+			_, spot := replay.battingMemory(entry.Half)
+			return normalizeSpot(spot) + 1
+		}
+		replay.RecordPlateAppearance(entry)
+	}
+	return b.BattingPosition()
+}
+
 func (b *Book) RecordPlateAppearance(entry EventEntry) {
 	if entry.Mode != ModePlay {
 		return

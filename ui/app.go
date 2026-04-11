@@ -153,7 +153,7 @@ func (r *Root) errorMessage(text string) {
 
 func (r *Root) renderEntryFields() []app.UI {
 	fields := []app.UI{
-		r.textField("Batter", &r.draft.Batter, "batter", "e.g. 12J"),
+		r.textField(r.batterLabel(), &r.draft.Batter, "batter", "e.g. 12J"),
 		r.textField("Pitches", &r.draft.Pitches, "pitches", "e.g. CBX"),
 		r.textField("Batter Event", &r.draft.BatterEvent, "batter-event", "e.g. S7"),
 		r.textField("Event Advances", &r.draft.Advances, "advances", "e.g. 1-3"),
@@ -162,6 +162,32 @@ func (r *Root) renderEntryFields() []app.UI {
 
 	fields = append(fields, r.textAreaField("Note", &r.draft.Note, "note", "Optional note"))
 	return fields
+}
+
+func (r *Root) batterLabel() string {
+	position := r.book.BattingPosition()
+	if r.draft.EditingID != "" {
+		position = r.book.BattingPositionForEntry(r.draft.EditingID)
+	}
+	return fmt.Sprintf("Batting %s", ordinal(position))
+}
+
+func ordinal(n int) string {
+	if n%100 >= 11 && n%100 <= 13 {
+		return fmt.Sprintf("%dth", n)
+	}
+
+	suffix := "th"
+	switch n % 10 {
+	case 1:
+		suffix = "st"
+	case 2:
+		suffix = "nd"
+	case 3:
+		suffix = "rd"
+	}
+
+	return fmt.Sprintf("%d%s", n, suffix)
 }
 
 func (r *Root) renderKeyboard() app.UI {
