@@ -114,7 +114,7 @@ func (r *Root) renderContext() app.UI {
 			app.Div().Class("field context-inning").Body(
 				app.Label().Class("field-label").Text("Inning"),
 				app.Div().Class("context-chip compact").Body(
-					app.Span().Text(fmt.Sprintf("%d %s", r.book.Context.Inning, strings.Title(string(r.book.Context.Half)))),
+					app.Span().Text(fmt.Sprintf("%s%d", string(r.book.Context.Half), r.book.Context.Inning)),
 				),
 			),
 			app.Div().Class("context-pitcher").Body(
@@ -838,11 +838,7 @@ func orDash(v string) string {
 }
 
 func shortContext(entry scorebook.EventEntry) string {
-	half := "T"
-	if entry.Half == scorebook.Bottom {
-		half = "B"
-	}
-	return fmt.Sprintf("%d%s", entry.Inning, half)
+	return fmt.Sprintf("%s%d", string(entry.Half), entry.Inning)
 }
 
 func (r *Root) syncDraftBatter(force bool) {
