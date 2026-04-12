@@ -122,7 +122,6 @@ func (r *Root) renderContext() app.UI {
 					app.Label().Class("field-label").Text(fmt.Sprintf("Pitcher • Batting %s", ordinal(r.book.BattingPosition()))),
 					app.Div().Class("context-pitcher-row").Body(
 						app.Input().ID(r.fieldID("pitcher")).Class("input").Type("text").Value(r.book.Context.Pitcher).Placeholder("e.g. 45S").
-							Attr("inputmode", "numeric").
 							Attr("autocapitalize", "characters").
 							Spellcheck(false).
 							OnInput(r.bindString(&r.book.Context.Pitcher, "pitcher")).
@@ -392,7 +391,6 @@ func (r *Root) textField(label string, target *string, focusKey, placeholder str
 		OnFocus(r.setFocus(focusKey))
 	if focusKey == "pitcher" || focusKey == "batter" {
 		input = input.
-			Attr("inputmode", "numeric").
 			Attr("autocapitalize", "characters").
 			Spellcheck(false)
 	}
