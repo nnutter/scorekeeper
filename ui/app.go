@@ -74,7 +74,7 @@ func (r *Root) renderGameInfo(exportText string) app.UI {
 		app.Div().Class("game-info-layout").Body(
 			app.Div().Class("field game-away").Body(
 				app.Label().Class("field-label").Text("Away Team"),
-				app.Input().ID(r.fieldID("away-team")).Class("input").Type("text").Value(r.book.Meta.AwayTeam).Placeholder("e.g. Yankees").
+				app.Input().ID(r.fieldID("away-team")).Class("input").Type("text").Value(r.book.Meta.AwayTeam).Placeholder("Away Team").
 					OnInput(r.bindString(&r.book.Meta.AwayTeam, "away-team")).
 					OnFocus(r.setFocus("away-team")),
 			),
@@ -86,7 +86,7 @@ func (r *Root) renderGameInfo(exportText string) app.UI {
 			),
 			app.Div().Class("field game-home").Body(
 				app.Label().Class("field-label").Text("Home Team"),
-				app.Input().ID(r.fieldID("home-team")).Class("input").Type("text").Value(r.book.Meta.HomeTeam).Placeholder("e.g. Red Sox").
+				app.Input().ID(r.fieldID("home-team")).Class("input").Type("text").Value(r.book.Meta.HomeTeam).Placeholder("Home Team").
 					OnInput(r.bindString(&r.book.Meta.HomeTeam, "home-team")).
 					OnFocus(r.setFocus("home-team")),
 			),
@@ -121,7 +121,7 @@ func (r *Root) renderContext() app.UI {
 				app.Div().Class("field").Body(
 					app.Label().Class("field-label").Text(fmt.Sprintf("Pitcher • Batting %s", ordinal(r.book.BattingPosition()))),
 					app.Div().Class("context-pitcher-row").Body(
-						app.Input().ID(r.fieldID("pitcher")).Class("input").Type("text").Value(r.book.Context.Pitcher).Placeholder("e.g. 45S").
+						app.Input().ID(r.fieldID("pitcher")).Class("input").Type("text").Value(r.book.Context.Pitcher).Placeholder("45S").
 							Attr("autocapitalize", "characters").
 							Spellcheck(false).
 							OnInput(r.bindString(&r.book.Context.Pitcher, "pitcher")).
@@ -168,11 +168,11 @@ func (r *Root) errorMessage(text string) {
 
 func (r *Root) renderEntryFields() []app.UI {
 	fields := []app.UI{
-		r.textField(r.batterLabel(), &r.draft.Batter, "batter", "e.g. 12J"),
-		r.textField("Pitches", &r.draft.Pitches, "pitches", "e.g. CBX"),
-		r.textField("Batter Event", &r.draft.BatterEvent, "batter-event", "e.g. S7"),
-		r.textField("Event Advances", &r.draft.Advances, "advances", "e.g. 1-3"),
-		r.textField("Base-Running Event", &r.draft.RunnerEvent, "runner-event", "e.g. SB2"),
+		r.textField(r.batterLabel(), &r.draft.Batter, "batter", "12J"),
+		r.textField("Pitches", &r.draft.Pitches, "pitches", ""),
+		r.textField("Batter Event", &r.draft.BatterEvent, "batter-event", ""),
+		r.textField("Event Advances", &r.draft.Advances, "advances", ""),
+		r.textField("Base-Running Event", &r.draft.RunnerEvent, "runner-event", ""),
 	}
 
 	fields = append(fields, r.textAreaField("Note", &r.draft.Note, "note", "Optional note"))

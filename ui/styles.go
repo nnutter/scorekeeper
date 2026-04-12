@@ -188,6 +188,12 @@ button, a, input, textarea, summary {
   display: grid;
   gap: 3px;
 }
+.field input::placeholder {
+  color: #ccc;
+}
+.field textarea::placeholder {
+  color: #ccc;
+}
 .field label, .mini-label {
   font-size: 0.82rem;
   color: var(--muted);
