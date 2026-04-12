@@ -453,20 +453,24 @@ func (r *Root) setFocus(focusKey string) app.EventHandler {
 
 func (r *Root) advanceHalf(ctx app.Context, _ app.Event) {
 	r.book.AdvanceHalf()
-	r.syncDraftBatter(true)
+	r.resetEntryDraftForContextChange()
 	r.clearMessage()
 	r.formVersion++
 	r.persist()
-	ctx.Reload()
+	ctx.Update()
+	syncContextFields(r.book.Context)
+	syncDraftFields(r.draft)
 }
 
 func (r *Root) retreatHalf(ctx app.Context, _ app.Event) {
 	r.book.RetreatHalf()
-	r.syncDraftBatter(true)
+	r.resetEntryDraftForContextChange()
 	r.clearMessage()
 	r.formVersion++
 	r.persist()
-	ctx.Reload()
+	ctx.Update()
+	syncContextFields(r.book.Context)
+	syncDraftFields(r.draft)
 }
 
 func (r *Root) advanceBatter(ctx app.Context, _ app.Event) {
@@ -619,6 +623,14 @@ func (r *Root) restoreEditContext() {
 	}
 	r.book.Context = r.editContext
 	r.hasEditBase = false
+}
+
+func (r *Root) resetEntryDraftForContextChange() {
+	r.draft.Reset()
+	r.hasEditBase = false
+	r.focused = ""
+	r.mobileKeys = "pitches"
+	r.syncDraftBatter(true)
 }
 
 func (r *Root) insertToken(target, token string) app.EventHandler {

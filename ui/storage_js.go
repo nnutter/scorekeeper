@@ -5,6 +5,8 @@ package ui
 import (
 	"errors"
 	"syscall/js"
+
+	"github.com/nnutter/scorekeeper/internal/scorebook"
 )
 
 const storageKey = "scorekeeper-book"
@@ -89,6 +91,34 @@ func clearBatterField() {
 	nodes := document.Call("querySelectorAll", `input[id^="batter-"]`)
 	for i := 0; i < nodes.Length(); i++ {
 		nodes.Index(i).Set("value", "")
+	}
+}
+
+func syncDraftFields(draft scorebook.EventDraft) {
+	document := js.Global().Get("document")
+	if document.IsUndefined() || document.IsNull() {
+		return
+	}
+	setFieldValues(document, `input[id^="batter-"]`, draft.Batter)
+	setFieldValues(document, `input[id^="pitches-"]`, draft.Pitches)
+	setFieldValues(document, `input[id^="batter-event-"]`, draft.BatterEvent)
+	setFieldValues(document, `input[id^="advances-"]`, draft.Advances)
+	setFieldValues(document, `input[id^="runner-event-"]`, draft.RunnerEvent)
+	setFieldValues(document, `textarea[id^="note-"]`, draft.Note)
+}
+
+func syncContextFields(ctx scorebook.GameContext) {
+	document := js.Global().Get("document")
+	if document.IsUndefined() || document.IsNull() {
+		return
+	}
+	setFieldValues(document, `input[id^="pitcher-"]`, ctx.Pitcher)
+}
+
+func setFieldValues(document js.Value, selector, value string) {
+	nodes := document.Call("querySelectorAll", selector)
+	for i := 0; i < nodes.Length(); i++ {
+		nodes.Index(i).Set("value", value)
 	}
 }
 
