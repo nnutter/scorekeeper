@@ -165,16 +165,44 @@ button, a, input, textarea, summary {
 }
 .context-layout {
   margin-top: 0;
-}
-.context-pitcher-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px;
+}
+.context-band {
+  display: grid;
   gap: 4px;
-  align-items: center;
+  align-items: end;
+  width: max-content;
+}
+.context-band-top {
+  grid-template-columns: 74px 58px;
+}
+.context-band-bottom {
+  grid-template-columns: 74px 58px;
+}
+.context-actions {
+  width: 100%;
+}
+.context-batting {
+  width: 100%;
+}
+.context-inning {
+  width: 100%;
+  max-width: 58px;
+}
+.context-pitcher {
+  min-width: 0;
+  width: 100%;
+  max-width: 58px;
+}
+.context-pitcher .input {
+  width: 100%;
+  max-width: 58px;
 }
 .context-batting-row {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(2, 35px);
+  align-items: end;
   gap: 4px;
 }
 .combined-grid {
@@ -278,6 +306,18 @@ button, a, input, textarea, summary {
   height: 35px;
   min-width: 35px;
   border-radius: 999px;
+}
+.context-chip,
+.context-actions .btn,
+.context-batting .btn,
+.context-pitcher .input {
+  height: 35px;
+}
+.context-chip.compact {
+  display: flex;
+  align-items: center;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 .keyboard-group {
   display: grid;
@@ -573,46 +613,42 @@ button, a, input, textarea, summary {
   }
   .context-layout {
     display: grid;
-    grid-template-columns: 162px minmax(0, 1fr) 74px 58px;
-    grid-template-areas: "pitcher . actions inning";
+    grid-template-columns: 58px 74px minmax(0, 1fr) 74px 58px;
+    grid-template-areas: "pitcher batting . actions inning";
     gap: 4px;
     align-items: end;
   }
+  .context-band {
+    display: contents;
+  }
   .context-inning {
     grid-area: inning;
-    max-width: 86px;
+    width: 100%;
+    max-width: 58px;
   }
   .context-inning .field-label,
   .context-actions label,
+  .context-batting .field-label,
   .context-pitcher .field-label {
     display: none;
   }
   .context-actions {
     grid-area: actions;
   }
+  .context-batting {
+    grid-area: batting;
+  }
   .context-action-row {
     grid-template-columns: repeat(2, 35px);
   }
   .context-pitcher {
     grid-area: pitcher;
-    min-width: 0;
-    width: 100%;
-    max-width: 162px;
+    width: 58px;
+    max-width: 58px;
   }
-  .context-pitcher-row {
-    grid-template-columns: 58px 74px;
-    gap: 4px;
-  }
-  .context-chip,
-  .context-actions .btn,
   .context-pitcher .input {
-    height: 35px;
-  }
-  .context-chip.compact {
-    display: flex;
-    align-items: center;
-    padding-top: 0;
-    padding-bottom: 0;
+    width: 58px;
+    max-width: 58px;
   }
   .combined-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

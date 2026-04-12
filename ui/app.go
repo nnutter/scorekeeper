@@ -104,33 +104,35 @@ func (r *Root) renderGameInfo(exportText string) app.UI {
 func (r *Root) renderContext() app.UI {
 	return app.Section().Class("panel context-panel").Body(
 		app.Div().Class("stack context-layout").Body(
-			app.Div().Class("field context-actions").Body(
-				app.Label().Text(" "),
-				app.Div().Class("context-action-row").Body(
-					app.Button().Class("btn warm context-step").Text("-").OnClick(r.retreatHalf),
-					app.Button().Class("btn warm context-step").Text("+").OnClick(r.advanceHalf),
-				),
-			),
-			app.Div().Class("field context-inning").Body(
-				app.Label().Class("field-label").Text("Inning"),
-				app.Div().Class("context-chip compact").Body(
-					app.Span().Text(fmt.Sprintf("%s%d", string(r.book.Context.Half), r.book.Context.Inning)),
-				),
-			),
-			app.Div().Class("context-pitcher").Body(
-				app.Div().Class("field").Body(
-					app.Label().Class("field-label").Text(fmt.Sprintf("Pitcher • Batting %s", ordinal(r.book.BattingPosition()))),
-					app.Div().Class("context-pitcher-row").Body(
-						app.Input().ID(r.fieldID("pitcher")).Class("input").Type("text").Value(r.book.Context.Pitcher).Placeholder("45S").
-							Attr("autocapitalize", "characters").
-							Spellcheck(false).
-							OnInput(r.bindString(&r.book.Context.Pitcher, "pitcher")).
-							OnFocus(r.setFocus("pitcher")),
-						app.Div().Class("context-batting-row").Body(
-							app.Button().Class("btn navy context-step batting-step").Text("-").OnClick(r.retreatBatter),
-							app.Button().Class("btn navy context-step batting-step").Text("+").OnClick(r.advanceBatter),
-						),
+			app.Div().Class("context-band context-band-top").Body(
+				app.Div().Class("field context-actions").Body(
+					app.Label().Text(" "),
+					app.Div().Class("context-action-row").Body(
+						app.Button().Class("btn warm context-step").Text("-").OnClick(r.retreatHalf),
+						app.Button().Class("btn warm context-step").Text("+").OnClick(r.advanceHalf),
 					),
+				),
+				app.Div().Class("field context-inning").Body(
+					app.Label().Class("field-label").Text("Inning"),
+					app.Div().Class("context-chip compact").Body(
+						app.Span().Text(fmt.Sprintf("%s%d", string(r.book.Context.Half), r.book.Context.Inning)),
+					),
+				),
+			),
+			app.Div().Class("context-band context-band-bottom").Body(
+				app.Div().Class("field context-batting").Body(
+					app.Div().Class("context-batting-row").Body(
+						app.Button().Class("btn navy context-step batting-step").Text("-").OnClick(r.retreatBatter),
+						app.Button().Class("btn navy context-step batting-step").Text("+").OnClick(r.advanceBatter),
+					),
+				),
+				app.Div().Class("field context-pitcher").Body(
+					app.Label().Class("field-label").Text("Pitcher"),
+					app.Input().ID(r.fieldID("pitcher")).Class("input").Type("text").Value(r.book.Context.Pitcher).Placeholder("45S").
+						Attr("autocapitalize", "characters").
+						Spellcheck(false).
+						OnInput(r.bindString(&r.book.Context.Pitcher, "pitcher")).
+						OnFocus(r.setFocus("pitcher")),
 				),
 			),
 		),
