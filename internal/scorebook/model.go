@@ -9,8 +9,8 @@ import (
 type Half string
 
 const (
-	Top          Half = "top"
-	Bottom       Half = "bottom"
+	Top          Half = "▲"
+	Bottom       Half = "▼"
 	BattingSlots      = 9
 )
 
