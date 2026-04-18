@@ -591,6 +591,12 @@ button, a, input, textarea, summary {
       "home email";
     gap: 7px 8px;
   }
+  .game-away,
+  .game-date,
+  .game-home {
+    width: 90%;
+    justify-self: start;
+  }
   .game-info-layout input[type="date"].input {
     text-align: left;
     color: var(--ink);
