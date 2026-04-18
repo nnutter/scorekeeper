@@ -171,7 +171,7 @@ func (r *Root) errorMessage(text string) {
 func (r *Root) renderEntryFields() []app.UI {
 	fields := []app.UI{
 		r.textField(r.batterLabel(), &r.draft.Batter, "batter", "12J"),
-		r.textField("Pitches", &r.draft.Pitches, "pitches", ""),
+		r.textField(r.pitchesLabel(), &r.draft.Pitches, "pitches", ""),
 		r.textField("Batter Event", &r.draft.BatterEvent, "batter-event", ""),
 		r.textField("Event Advances", &r.draft.Advances, "advances", ""),
 		r.textField("Base-Running Event", &r.draft.RunnerEvent, "runner-event", ""),
@@ -205,6 +205,27 @@ func ordinal(n int) string {
 	}
 
 	return fmt.Sprintf("%d%s", n, suffix)
+}
+
+func (r *Root) pitchesLabel() string {
+	balls, strikes := countBallsStrikes(r.draft.Pitches)
+	return fmt.Sprintf("Pitches (%d-%d)", balls, strikes)
+}
+
+func countBallsStrikes(pitches string) (balls, strikes int) {
+	for _, r := range pitches {
+		switch r {
+		case 'B', 'I', 'P', 'V':
+			balls++
+		case 'A', 'C', 'K', 'M', 'Q', 'S':
+			strikes++
+		case 'F', 'L', 'R':
+			if strikes < 2 {
+				strikes++
+			}
+		}
+	}
+	return
 }
 
 func (r *Root) renderKeyboard() app.UI {
