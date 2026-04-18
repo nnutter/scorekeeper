@@ -706,17 +706,7 @@ func (r *Root) applyFocusedFallback(token string) {
 }
 
 func (r *Root) appendAdvanceToken(token string) {
-	if strings.TrimSpace(r.draft.Advances) == "" {
-		r.draft.Advances = token
-		r.draft.Advances = sortLeadRunnerFirst(r.draft.Advances, advanceSortRank)
-		return
-	}
-	if strings.HasSuffix(strings.TrimSpace(r.draft.Advances), ";") {
-		r.draft.Advances += token
-		r.draft.Advances = sortLeadRunnerFirst(r.draft.Advances, advanceSortRank)
-		return
-	}
-	r.draft.Advances += ";" + token
+	r.draft.Advances = upsertAdvanceToken(r.draft.Advances, token)
 	r.draft.Advances = sortLeadRunnerFirst(r.draft.Advances, advanceSortRank)
 }
 
@@ -751,13 +741,56 @@ func sortLeadRunnerFirst(value string, rank func(string) int) string {
 	return strings.Join(parts, ";")
 }
 
-func advanceSortRank(token string) int {
+func upsertAdvanceToken(value, token string) string {
+	runner, ok := advanceRunnerKey(token)
+	if !ok {
+		if strings.TrimSpace(value) == "" {
+			return token
+		}
+		if strings.HasSuffix(strings.TrimSpace(value), ";") {
+			return value + token
+		}
+		return value + ";" + token
+	}
+
+	parts := strings.Split(value, ";")
+	for i, part := range parts {
+		if partRunner, ok := advanceRunnerKey(part); ok && partRunner == runner {
+			parts[i] = token
+			return strings.Join(parts, ";")
+		}
+	}
+
+	if strings.TrimSpace(value) == "" {
+		return token
+	}
+	if strings.HasSuffix(strings.TrimSpace(value), ";") {
+		return value + token
+	}
+	return value + ";" + token
+}
+
+func advanceRunnerKey(token string) (byte, bool) {
 	token = strings.TrimSpace(token)
 	if token == "" {
-		return 99
+		return 0, false
 	}
 
 	switch token[0] {
+	case '3', '2', '1', 'B':
+		return token[0], true
+	default:
+		return 0, false
+	}
+}
+
+func advanceSortRank(token string) int {
+	runner, ok := advanceRunnerKey(token)
+	if !ok {
+		return 99
+	}
+
+	switch runner {
 	case '3':
 		return 0
 	case '2':

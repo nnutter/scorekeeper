@@ -77,6 +77,30 @@ func TestSortLeadRunnerFirstAdvances(t *testing.T) {
 	}
 }
 
+func TestUpsertAdvanceToken(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		token string
+		want  string
+	}{
+		{"append first advance", "", "1-3", "1-3"},
+		{"replace same runner", "1-3", "1X2", "1X2"},
+		{"replace within list", "3-H;1-3;B-1", "1X2", "3-H;1X2;B-1"},
+		{"append new runner", "2-3;1-2", "B-1", "2-3;1-2;B-1"},
+		{"unknown token appends", "1-2", "E", "1-2;E"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := upsertAdvanceToken(tt.input, tt.token)
+			if got != tt.want {
+				t.Fatalf("upsertAdvanceToken(%q, %q) = %q, want %q", tt.input, tt.token, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestSortLeadRunnerFirstRunnerEvents(t *testing.T) {
 	tests := []struct {
 		name  string
