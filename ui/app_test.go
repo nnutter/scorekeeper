@@ -55,3 +55,46 @@ func TestCountBallsStrikes(t *testing.T) {
 		})
 	}
 }
+
+func TestSortLeadRunnerFirstAdvances(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"already sorted", "3-H;2-3;1-2;B-1", "3-H;2-3;1-2;B-1"},
+		{"lead runner first", "1-2;3-H;B-1;2-3", "3-H;2-3;1-2;B-1"},
+		{"outs included", "BX2;1X3;3XH;2-H", "3XH;2-H;1X3;BX2"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := sortLeadRunnerFirst(tt.input, advanceSortRank)
+			if got != tt.want {
+				t.Fatalf("sortLeadRunnerFirst(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSortLeadRunnerFirstRunnerEvents(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"already sorted", "SBH;SB3;SB2", "SBH;SB3;SB2"},
+		{"lead runner first", "SB2;PO3;SBH;PO1;SB3", "PO3;SBH;SB3;SB2;PO1"},
+		{"picked off caught stealing", "POCS2;CSH;CS3", "CSH;CS3;POCS2"},
+		{"unknown events stay last", "OA;SB3;WP;SB2", "SB3;SB2;OA;WP"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := sortLeadRunnerFirst(tt.input, runnerEventSortRank)
+			if got != tt.want {
+				t.Fatalf("sortLeadRunnerFirst(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}

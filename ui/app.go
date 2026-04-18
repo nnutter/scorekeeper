@@ -3,6 +3,7 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/maxence-charriere/go-app/v10/pkg/app"
@@ -707,13 +708,16 @@ func (r *Root) applyFocusedFallback(token string) {
 func (r *Root) appendAdvanceToken(token string) {
 	if strings.TrimSpace(r.draft.Advances) == "" {
 		r.draft.Advances = token
+		r.draft.Advances = sortLeadRunnerFirst(r.draft.Advances, advanceSortRank)
 		return
 	}
 	if strings.HasSuffix(strings.TrimSpace(r.draft.Advances), ";") {
 		r.draft.Advances += token
+		r.draft.Advances = sortLeadRunnerFirst(r.draft.Advances, advanceSortRank)
 		return
 	}
 	r.draft.Advances += ";" + token
+	r.draft.Advances = sortLeadRunnerFirst(r.draft.Advances, advanceSortRank)
 }
 
 func (r *Root) appendBatterEventToken(token string) {
@@ -727,13 +731,62 @@ func (r *Root) appendBatterEventToken(token string) {
 func (r *Root) appendRunnerEventToken(token string) {
 	if strings.TrimSpace(r.draft.RunnerEvent) == "" {
 		r.draft.RunnerEvent = token
+		r.draft.RunnerEvent = sortLeadRunnerFirst(r.draft.RunnerEvent, runnerEventSortRank)
 		return
 	}
 	if strings.HasSuffix(strings.TrimSpace(r.draft.RunnerEvent), ";") {
 		r.draft.RunnerEvent += token
+		r.draft.RunnerEvent = sortLeadRunnerFirst(r.draft.RunnerEvent, runnerEventSortRank)
 		return
 	}
 	r.draft.RunnerEvent += ";" + token
+	r.draft.RunnerEvent = sortLeadRunnerFirst(r.draft.RunnerEvent, runnerEventSortRank)
+}
+
+func sortLeadRunnerFirst(value string, rank func(string) int) string {
+	parts := strings.Split(value, ";")
+	slices.SortStableFunc(parts, func(a, b string) int {
+		return rank(a) - rank(b)
+	})
+	return strings.Join(parts, ";")
+}
+
+func advanceSortRank(token string) int {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return 99
+	}
+
+	switch token[0] {
+	case '3':
+		return 0
+	case '2':
+		return 1
+	case '1':
+		return 2
+	case 'B':
+		return 3
+	default:
+		return 4
+	}
+}
+
+func runnerEventSortRank(token string) int {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return 99
+	}
+
+	switch {
+	case strings.HasSuffix(token, "H") || token == "PO3" || token == "POCSH":
+		return 0
+	case strings.HasSuffix(token, "3") || token == "PO2" || token == "POCS3":
+		return 1
+	case strings.HasSuffix(token, "2") || token == "PO1" || token == "POCS2":
+		return 2
+	default:
+		return 3
+	}
 }
 
 func isExclusiveBatterEventToken(token string) bool {
