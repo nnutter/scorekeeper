@@ -40,8 +40,27 @@ func ExportText(book Book) string {
 
 func MailtoLink(book Book) string {
 	subject := fmt.Sprintf("Scorekeeper %s at %s %s", safe(book.Meta.AwayTeam), safe(book.Meta.HomeTeam), safe(book.Meta.GameDate))
-	body := ExportText(book)
+	body := MailText(book)
 	return "mailto:?subject=" + url.QueryEscape(subject) + "&body=" + url.QueryEscape(body)
+}
+
+func MailText(book Book) string {
+	lines := make([]string, 0, len(book.Entries)+1)
+	lines = append(lines, strings.Join([]string{
+		safe(book.Meta.GameDate),
+		safe(book.Meta.AwayTeam),
+		safe(book.Meta.HomeTeam),
+	}, ","))
+	for _, entry := range book.Entries {
+		lines = append(lines, strings.Join([]string{
+			fmt.Sprintf("%s%d", string(entry.Half), entry.Inning),
+			safe(entry.Pitcher),
+			safe(entry.Batter),
+			safe(entry.Pitches),
+			safe(entry.LogEventText()),
+		}, ","))
+	}
+	return strings.Join(lines, "\n")
 }
 
 func safe(s string) string {

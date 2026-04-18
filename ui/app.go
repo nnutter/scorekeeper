@@ -52,7 +52,7 @@ func (r *Root) OnAppUpdate(ctx app.Context) {
 }
 
 func (r *Root) Render() app.UI {
-	exportText := scorebook.ExportText(r.book)
+	exportText := scorebook.MailText(r.book)
 
 	return app.Div().Class(r.pageClass()).Body(
 		app.Div().Class("stack main-stack").Body(
@@ -1005,11 +1005,7 @@ func (r *Root) saveLabel() string {
 }
 
 func (r *Root) logEventText(entry scorebook.EventEntry) string {
-	parts := []string{entry.EventText()}
-	if entry.Advances != "" {
-		parts = append(parts, entry.Advances)
-	}
-	return strings.Join(parts, " | ")
+	return entry.LogEventText()
 }
 
 func (r *Root) restore() {

@@ -337,11 +337,16 @@ func (e EventEntry) EventText() string {
 }
 
 func (e EventEntry) Summary() string {
-	summary := fmt.Sprintf("%s | batter %s | %s", strings.Title(string(e.Half)), e.Batter, e.EventText())
-	if e.Advances != "" {
-		summary += " | " + e.Advances
-	}
+	summary := fmt.Sprintf("%s | batter %s | %s", strings.Title(string(e.Half)), e.Batter, e.LogEventText())
 	return summary
+}
+
+func (e EventEntry) LogEventText() string {
+	parts := []string{e.EventText()}
+	if strings.TrimSpace(e.Advances) != "" {
+		parts = append(parts, strings.TrimSpace(e.Advances))
+	}
+	return strings.Join(parts, " | ")
 }
 
 func nextID() string {
