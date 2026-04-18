@@ -85,7 +85,7 @@ func TestMailtoLinkEscapesBody(t *testing.T) {
 	}
 	want := strings.Join([]string{
 		"2026-04-01,Away Club,Home Club",
-		"▲1,45S,12J,CBX,S7 | 1-3",
+		"▲1,45S,12J,CBX,S7.1-3",
 		"▲1,45S,13K,,SB2",
 	}, "\n")
 	if body != want {

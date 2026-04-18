@@ -317,7 +317,7 @@ func TestEventEntryEventTextCombinesBatterAndRunnerEvents(t *testing.T) {
 func TestEventEntryLogEventTextMatchesLogFormatting(t *testing.T) {
 	entry := EventEntry{BatterEvent: "S7", RunnerEvent: "SB2", Advances: "1-3"}
 
-	if got := entry.LogEventText(); got != "S7+SB2 | 1-3" {
-		t.Fatalf("log event text = %q, want %q", got, "S7+SB2 | 1-3")
+	if got := entry.LogEventText(); got != "S7+SB2.1-3" {
+		t.Fatalf("log event text = %q, want %q", got, "S7+SB2.1-3")
 	}
 }

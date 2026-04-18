@@ -346,7 +346,7 @@ func (e EventEntry) LogEventText() string {
 	if strings.TrimSpace(e.Advances) != "" {
 		parts = append(parts, strings.TrimSpace(e.Advances))
 	}
-	return strings.Join(parts, " | ")
+	return strings.Join(parts, ".")
 }
 
 func nextID() string {
