@@ -11,6 +11,7 @@ import (
 
 const storageKey = "scorekeeper-book"
 const pullIndicatorThreshold = 28
+const batterFieldSelector = `input[id^="batter-"]:not([id^="batter-event-"])`
 
 var pageBottomSticky bool
 var pullToRefreshReady bool
@@ -70,7 +71,7 @@ func clearEntryFields(keepBatter, keepPitches bool) {
 		`textarea[id^="note-"]`,
 	}
 	if !keepBatter {
-		selectors = append(selectors, `input[id^="batter-"]`)
+		selectors = append(selectors, batterFieldSelector)
 	}
 	if !keepPitches {
 		selectors = append(selectors, `input[id^="pitches-"]`)
@@ -88,7 +89,7 @@ func clearBatterField() {
 	if document.IsUndefined() || document.IsNull() {
 		return
 	}
-	nodes := document.Call("querySelectorAll", `input[id^="batter-"]`)
+	nodes := document.Call("querySelectorAll", batterFieldSelector)
 	for i := 0; i < nodes.Length(); i++ {
 		nodes.Index(i).Set("value", "")
 	}
@@ -99,7 +100,7 @@ func syncDraftFields(draft scorebook.EventDraft) {
 	if document.IsUndefined() || document.IsNull() {
 		return
 	}
-	setFieldValues(document, `input[id^="batter-"]`, draft.Batter)
+	setFieldValues(document, batterFieldSelector, draft.Batter)
 	setFieldValues(document, `input[id^="pitches-"]`, draft.Pitches)
 	setFieldValues(document, `input[id^="batter-event-"]`, draft.BatterEvent)
 	setFieldValues(document, `input[id^="advances-"]`, draft.Advances)

@@ -214,6 +214,30 @@ func TestBattingPositionForEntryReturnsHistoricalSpot(t *testing.T) {
 	}
 }
 
+func TestBattingPositionForEntryPrefersStoredPosition(t *testing.T) {
+	book := Book{
+		Entries: []EventEntry{
+			{ID: "top-1", Mode: ModePlay, Half: Top, Batter: "A1", BattingPos: 4},
+		},
+	}
+
+	if got := book.BattingPositionForEntry("top-1"); got != 4 {
+		t.Fatalf("stored batting position = %d, want 4", got)
+	}
+}
+
+func TestRecordPlateAppearanceUsesStoredPosition(t *testing.T) {
+	book := NewBook()
+	book.RecordPlateAppearance(EventEntry{Mode: ModePlay, Half: Top, Batter: "A4", BattingPos: 4})
+
+	if got := book.AwayOrder[3]; got != "A4" {
+		t.Fatalf("stored batter slotted at 4 = %q, want A4", got)
+	}
+	if got := book.BattingPosition(); got != 5 {
+		t.Fatalf("next batting position after stored slot = %d, want 5", got)
+	}
+}
+
 func TestEventDraftToEntryTrimsValues(t *testing.T) {
 	draft := EventDraft{
 		Batter:      " 12J ",

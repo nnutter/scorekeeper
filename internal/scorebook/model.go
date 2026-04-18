@@ -38,6 +38,7 @@ type EventEntry struct {
 	Mode        EntryMode `json:"mode"`
 	Inning      int       `json:"inning"`
 	Half        Half      `json:"half"`
+	BattingPos  int       `json:"battingPos,omitempty"`
 	Pitcher     string    `json:"pitcher"`
 	Batter      string    `json:"batter"`
 	Pitches     string    `json:"pitches,omitempty"`
@@ -181,6 +182,9 @@ func (b Book) BattingPositionForEntry(id string) int {
 	replay := NewBook()
 	for _, entry := range b.Entries {
 		if entry.ID == id {
+			if entry.BattingPos >= 1 && entry.BattingPos <= BattingSlots {
+				return entry.BattingPos
+			}
 			_, spot := replay.battingMemory(entry.Half)
 			return normalizeSpot(spot) + 1
 		}
@@ -201,6 +205,12 @@ func (b *Book) RecordPlateAppearance(entry EventEntry) {
 
 	order, spot := b.battingMemoryRef(entry.Half)
 	*order = normalizeBattingOrder(*order)
+	if entry.BattingPos >= 1 && entry.BattingPos <= BattingSlots {
+		position := entry.BattingPos - 1
+		(*order)[position] = batter
+		*spot = normalizeSpot(position + 1)
+		return
+	}
 	currentSpot := normalizeSpot(*spot)
 	index := indexOfBatter(*order, batter)
 	if index >= 0 {

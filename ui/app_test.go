@@ -1,6 +1,10 @@
 package ui
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/nnutter/scorekeeper/internal/scorebook"
+)
 
 func TestCountBallsStrikes(t *testing.T) {
 	tests := []struct {
@@ -120,5 +124,184 @@ func TestSortLeadRunnerFirstRunnerEvents(t *testing.T) {
 				t.Fatalf("sortLeadRunnerFirst(%q) = %q, want %q", tt.input, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestHandleHalfChangePreservesEditDraft(t *testing.T) {
+	r := &Root{
+		draft: scorebook.EventDraft{
+			EditingID:   "123",
+			Batter:      "12J",
+			Pitches:     "CB",
+			BatterEvent: "S7",
+		},
+		hasEditBase: true,
+		message:     "Editing event.",
+		messageKind: "status",
+		focused:     "pitches",
+		mobileKeys:  "advances",
+	}
+
+	r.handleHalfChange()
+
+	if r.draft.EditingID != "123" || r.draft.Batter != "12J" || r.draft.Pitches != "CB" || r.draft.BatterEvent != "S7" {
+		t.Fatalf("editing draft changed during half change: %+v", r.draft)
+	}
+	if !r.hasEditBase {
+		t.Fatal("edit base should be preserved during half change")
+	}
+	if r.focused != "pitches" || r.mobileKeys != "advances" {
+		t.Fatalf("editing UI state changed during half change: focused=%q mobileKeys=%q", r.focused, r.mobileKeys)
+	}
+	if r.message != "" || r.messageKind != "" {
+		t.Fatalf("message should be cleared during half change: %q %q", r.message, r.messageKind)
+	}
+}
+
+func TestHandleHalfChangeResetsNewEntryDraft(t *testing.T) {
+	r := &Root{
+		book: scorebook.Book{
+			AwayOrder: make([]string, scorebook.BattingSlots),
+			HomeOrder: make([]string, scorebook.BattingSlots),
+		},
+		draft: scorebook.EventDraft{
+			Batter:      "12J",
+			Pitches:     "CB",
+			BatterEvent: "S7",
+		},
+		hasEditBase: true,
+		message:     "Event saved.",
+		messageKind: "status",
+		focused:     "pitches",
+		mobileKeys:  "advances",
+	}
+
+	r.handleHalfChange()
+
+	if r.draft != (scorebook.EventDraft{}) {
+		t.Fatalf("new-entry draft should reset during half change: %+v", r.draft)
+	}
+	if r.hasEditBase {
+		t.Fatal("edit base should be cleared for new-entry half change")
+	}
+	if r.focused != "" || r.mobileKeys != "pitches" {
+		t.Fatalf("new-entry UI state not reset: focused=%q mobileKeys=%q", r.focused, r.mobileKeys)
+	}
+	if r.message != "" || r.messageKind != "" {
+		t.Fatalf("message should be cleared during half change: %q %q", r.message, r.messageKind)
+	}
+}
+
+func TestStepBatterUpdatesEditingDraftBatter(t *testing.T) {
+	r := &Root{
+		book: scorebook.Book{
+			AwayOrder: []string{"A1", "A2", "A3", "", "", "", "", "", ""},
+			Context:   scorebook.GameContext{Half: scorebook.Top},
+		},
+		draft:      scorebook.EventDraft{EditingID: "top-1", Batter: "A1"},
+		editBatter: 1,
+	}
+
+	r.stepBatter(1)
+	if r.editBatter != 2 {
+		t.Fatalf("edit batter position after advance = %d, want 2", r.editBatter)
+	}
+	if r.draft.Batter != "A2" {
+		t.Fatalf("editing batter after advance = %q, want A2", r.draft.Batter)
+	}
+
+	r.stepBatter(-1)
+	if r.editBatter != 1 {
+		t.Fatalf("edit batter position after retreat = %d, want 1", r.editBatter)
+	}
+	if r.draft.Batter != "A1" {
+		t.Fatalf("editing batter after retreat = %q, want A1", r.draft.Batter)
+	}
+}
+
+func TestStepBatterWrapsWhileEditing(t *testing.T) {
+	r := &Root{
+		book: scorebook.Book{
+			HomeOrder: []string{"H1", "", "", "", "", "", "", "", "H9"},
+			Context:   scorebook.GameContext{Half: scorebook.Bottom},
+		},
+		draft:      scorebook.EventDraft{EditingID: "bottom-1", Batter: "H1"},
+		editBatter: 1,
+	}
+
+	r.stepBatter(-1)
+	if r.editBatter != 9 {
+		t.Fatalf("edit batter position after wrap = %d, want 9", r.editBatter)
+	}
+	if r.draft.Batter != "H9" {
+		t.Fatalf("editing batter after wrap = %q, want H9", r.draft.Batter)
+	}
+}
+
+func TestCurrentEntryBattingPositionUsesEditBatterWhileEditing(t *testing.T) {
+	r := &Root{
+		book:       scorebook.Book{Context: scorebook.GameContext{Half: scorebook.Top}, AwaySpot: 1},
+		draft:      scorebook.EventDraft{EditingID: "top-1"},
+		editBatter: 4,
+	}
+
+	if got := r.currentEntryBattingPosition(); got != 4 {
+		t.Fatalf("current entry batting position = %d, want 4", got)
+	}
+}
+
+func TestCurrentEntryBattingPositionFallsBackToBookPosition(t *testing.T) {
+	r := &Root{
+		book: scorebook.Book{
+			Context:  scorebook.GameContext{Half: scorebook.Top},
+			AwaySpot: 2,
+		},
+	}
+
+	if got := r.currentEntryBattingPosition(); got != 3 {
+		t.Fatalf("current entry batting position = %d, want 3", got)
+	}
+}
+
+func TestSortedLogEntriesOrdersByInningHalfAndBattingPositionStably(t *testing.T) {
+	book := scorebook.Book{
+		Context: scorebook.GameContext{Inning: 2, Half: scorebook.Bottom},
+		Entries: []scorebook.EventEntry{
+			{ID: "top-1", Inning: 1, Half: scorebook.Top, Mode: scorebook.ModePlay, Batter: "A1", BattingPos: 1},
+			{ID: "bottom-1", Inning: 1, Half: scorebook.Bottom, Mode: scorebook.ModePlay, Batter: "H1", BattingPos: 1},
+			{ID: "top-2", Inning: 1, Half: scorebook.Top, Mode: scorebook.ModePlay, Batter: "A2", BattingPos: 2},
+			{ID: "bottom-2", Inning: 1, Half: scorebook.Bottom, Mode: scorebook.ModePlay, Batter: "H2", BattingPos: 2},
+			{ID: "top-3-a", Inning: 2, Half: scorebook.Top, Mode: scorebook.ModePlay, Batter: "A3", BattingPos: 3},
+			{ID: "top-3-b", Inning: 2, Half: scorebook.Top, Mode: scorebook.ModeRun, Batter: "A2", RunnerEvent: "SB2", BattingPos: 3},
+		},
+	}
+
+	sorted := sortedLogEntries(book)
+	want := []string{"top-1", "top-2", "bottom-1", "bottom-2", "top-3-a", "top-3-b"}
+	for i, id := range want {
+		if sorted[i].ID != id {
+			t.Fatalf("sorted[%d] = %q, want %q", i, sorted[i].ID, id)
+		}
+	}
+
+	if book.Entries[0].ID != "top-1" {
+		t.Fatalf("sortedLogEntries should not mutate input, first entry = %q", book.Entries[0].ID)
+	}
+}
+
+func TestSortedLogEntriesReordersEditedEntryWhenBattingPositionCollides(t *testing.T) {
+	book := scorebook.Book{
+		Entries: []scorebook.EventEntry{
+			{ID: "top-1", Inning: 1, Half: scorebook.Top, Mode: scorebook.ModePlay, Batter: "A1", BattingPos: 2},
+			{ID: "top-2", Inning: 1, Half: scorebook.Top, Mode: scorebook.ModePlay, Batter: "A2"},
+		},
+	}
+
+	sorted := sortedLogEntries(book)
+	want := []string{"top-2", "top-1"}
+	for i, id := range want {
+		if sorted[i].ID != id {
+			t.Fatalf("sorted[%d] = %q, want %q", i, sorted[i].ID, id)
+		}
 	}
 }

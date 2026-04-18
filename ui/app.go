@@ -16,6 +16,7 @@ type Root struct {
 	book        scorebook.Book
 	draft       scorebook.EventDraft
 	editContext scorebook.GameContext
+	editBatter  int
 	message     string
 	focused     string
 	hasLoaded   bool
@@ -185,7 +186,10 @@ func (r *Root) renderEntryFields() []app.UI {
 func (r *Root) batterLabel() string {
 	position := r.book.BattingPosition()
 	if r.draft.EditingID != "" {
-		position = r.book.BattingPositionForEntry(r.draft.EditingID)
+		position = r.editBatter
+		if position < 1 || position > scorebook.BattingSlots {
+			position = r.book.BattingPositionForEntry(r.draft.EditingID)
+		}
 	}
 	return fmt.Sprintf("Batting %s", ordinal(position))
 }
@@ -355,8 +359,9 @@ func (r *Root) tokenToneClass(target, token string) string {
 }
 
 func (r *Root) renderLog() app.UI {
-	rows := make([]app.UI, 0, len(r.book.Entries))
-	for _, entry := range r.book.Entries {
+	entries := sortedLogEntries(r.book)
+	rows := make([]app.UI, 0, len(entries))
+	for _, entry := range entries {
 		rows = append(rows, r.renderLogEntry(entry))
 	}
 	if len(rows) == 0 {
@@ -378,6 +383,61 @@ func (r *Root) renderLog() app.UI {
 			app.Div().Class("entry-list").Body(rows...),
 		),
 	)
+}
+
+func sortedLogEntries(book scorebook.Book) []scorebook.EventEntry {
+	sorted := slices.Clone(book.Entries)
+	legacyPositions := legacyBattingPositions(book.Entries)
+	currentPositions := make(map[string]int, len(book.Entries))
+	for _, entry := range book.Entries {
+		currentPositions[entry.ID] = displayBattingPosition(entry, legacyPositions)
+	}
+	slices.SortStableFunc(sorted, func(a, b scorebook.EventEntry) int {
+		if a.Inning != b.Inning {
+			return a.Inning - b.Inning
+		}
+		if a.Half != b.Half {
+			return halfSortRank(a.Half) - halfSortRank(b.Half)
+		}
+		if currentPositions[a.ID] != currentPositions[b.ID] {
+			return currentPositions[a.ID] - currentPositions[b.ID]
+		}
+		if hasStoredBattingPosition(a) != hasStoredBattingPosition(b) && legacyPositions[a.ID] != legacyPositions[b.ID] {
+			return legacyPositions[b.ID] - legacyPositions[a.ID]
+		}
+		return 0
+	})
+	return sorted
+}
+
+func hasStoredBattingPosition(entry scorebook.EventEntry) bool {
+	return entry.BattingPos >= 1 && entry.BattingPos <= scorebook.BattingSlots
+}
+
+func displayBattingPosition(entry scorebook.EventEntry, legacyPositions map[string]int) int {
+	if hasStoredBattingPosition(entry) {
+		return entry.BattingPos
+	}
+	return legacyPositions[entry.ID]
+}
+
+func legacyBattingPositions(entries []scorebook.EventEntry) map[string]int {
+	positions := make(map[string]int, len(entries))
+	replay := scorebook.NewBook()
+	for _, entry := range entries {
+		positions[entry.ID] = replay.BattingPosition()
+		legacyEntry := entry
+		legacyEntry.BattingPos = 0
+		replay.RecordPlateAppearance(legacyEntry)
+	}
+	return positions
+}
+
+func halfSortRank(half scorebook.Half) int {
+	if half == scorebook.Top {
+		return 0
+	}
+	return 1
 }
 
 func (r *Root) renderLogEntry(entry scorebook.EventEntry) app.UI {
@@ -477,46 +537,44 @@ func (r *Root) setFocus(focusKey string) app.EventHandler {
 
 func (r *Root) advanceHalf(ctx app.Context, _ app.Event) {
 	r.book.AdvanceHalf()
-	r.resetEntryDraftForContextChange()
-	r.clearMessage()
+	r.handleHalfChange()
 	r.formVersion++
 	r.persist()
 	ctx.Update()
 	syncContextFields(r.book.Context)
-	syncDraftFields(r.draft)
+	if r.draft.EditingID == "" {
+		syncDraftFields(r.draft)
+	}
 }
 
 func (r *Root) retreatHalf(ctx app.Context, _ app.Event) {
 	r.book.RetreatHalf()
-	r.resetEntryDraftForContextChange()
-	r.clearMessage()
+	r.handleHalfChange()
 	r.formVersion++
 	r.persist()
 	ctx.Update()
 	syncContextFields(r.book.Context)
-	syncDraftFields(r.draft)
+	if r.draft.EditingID == "" {
+		syncDraftFields(r.draft)
+	}
 }
 
 func (r *Root) advanceBatter(ctx app.Context, _ app.Event) {
-	r.book.AdvanceBattingPosition()
-	r.syncDraftBatter(true)
+	r.stepBatter(1)
 	if strings.TrimSpace(r.draft.Batter) == "" {
 		clearBatterField()
 	}
 	r.clearMessage()
-	r.formVersion++
 	r.persist()
 	ctx.Update()
 }
 
 func (r *Root) retreatBatter(ctx app.Context, _ app.Event) {
-	r.book.RetreatBattingPosition()
-	r.syncDraftBatter(true)
+	r.stepBatter(-1)
 	if strings.TrimSpace(r.draft.Batter) == "" {
 		clearBatterField()
 	}
 	r.clearMessage()
-	r.formVersion++
 	r.persist()
 	ctx.Update()
 }
@@ -532,6 +590,7 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 	}
 
 	entry := r.draft.ToEntry(r.book.Context)
+	entry.BattingPos = r.currentEntryBattingPosition()
 	wasEditing := r.draft.EditingID != ""
 	if r.draft.EditingID != "" {
 		entry.ID = r.draft.EditingID
@@ -606,6 +665,10 @@ func (r *Root) editEntry(id string) app.EventHandler {
 					Half:    entry.Half,
 					Pitcher: entry.Pitcher,
 				}
+				r.editBatter = entry.BattingPos
+				if r.editBatter < 1 || r.editBatter > scorebook.BattingSlots {
+					r.editBatter = r.book.BattingPositionForEntry(entry.ID)
+				}
 				r.draft.LoadFromEntry(entry)
 				r.statusMessage("Editing event.")
 				r.formVersion++
@@ -646,15 +709,79 @@ func (r *Root) restoreEditContext() {
 		return
 	}
 	r.book.Context = r.editContext
+	r.editBatter = 0
 	r.hasEditBase = false
 }
 
 func (r *Root) resetEntryDraftForContextChange() {
 	r.draft.Reset()
+	r.editBatter = 0
 	r.hasEditBase = false
 	r.focused = ""
 	r.mobileKeys = "pitches"
 	r.syncDraftBatter(true)
+}
+
+func (r *Root) stepBatter(delta int) {
+	if r.draft.EditingID != "" {
+		if r.editBatter < 1 || r.editBatter > scorebook.BattingSlots {
+			r.editBatter = r.book.BattingPositionForEntry(r.draft.EditingID)
+		}
+		r.editBatter = wrapBattingPosition(r.editBatter + delta)
+		r.syncEditingDraftBatter()
+		return
+	}
+	if delta > 0 {
+		r.book.AdvanceBattingPosition()
+	} else {
+		r.book.RetreatBattingPosition()
+	}
+	r.syncDraftBatter(true)
+}
+
+func (r *Root) currentEntryBattingPosition() int {
+	if r.draft.EditingID != "" && r.editBatter >= 1 && r.editBatter <= scorebook.BattingSlots {
+		return r.editBatter
+	}
+	return r.book.BattingPosition()
+}
+
+func wrapBattingPosition(position int) int {
+	position = (position - 1) % scorebook.BattingSlots
+	if position < 0 {
+		position += scorebook.BattingSlots
+	}
+	return position + 1
+}
+
+func (r *Root) syncEditingDraftBatter() {
+	r.draft.Batter = r.rememberedBatterAt(r.book.Context.Half, r.editBatter)
+}
+
+func (r *Root) rememberedBatterAt(half scorebook.Half, position int) string {
+	if position < 1 || position > scorebook.BattingSlots {
+		return ""
+	}
+	var order []string
+	if half == scorebook.Bottom {
+		order = r.book.HomeOrder
+	} else {
+		order = r.book.AwayOrder
+	}
+	index := position - 1
+	if index >= len(order) {
+		return ""
+	}
+	return strings.TrimSpace(order[index])
+}
+
+func (r *Root) handleHalfChange() {
+	if r.draft.EditingID != "" {
+		r.clearMessage()
+		return
+	}
+	r.resetEntryDraftForContextChange()
+	r.clearMessage()
 }
 
 func (r *Root) insertToken(target, token string) app.EventHandler {
