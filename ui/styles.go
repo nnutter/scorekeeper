@@ -698,7 +698,8 @@ button, a, input, textarea, summary {
     align-items: stretch;
   }
   .log-row {
-    grid-template-columns: 35px 31px 40px 102px minmax(0, 1fr) 88px;
+    grid-template-columns: 30px 26px 34px 87px minmax(0, 1fr) 64px;
+    gap: 4px;
     font-size: 0.82rem;
   }
 }
