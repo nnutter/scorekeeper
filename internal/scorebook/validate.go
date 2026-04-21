@@ -3,19 +3,11 @@ package scorebook
 import "strings"
 
 func Validate(meta GameMeta, ctx GameContext, draft EventDraft) []string {
+	_ = meta
 	var issues []string
 	batterEvent := strings.TrimSpace(draft.BatterEvent)
 	runnerEvent := strings.TrimSpace(draft.RunnerEvent)
 
-	if strings.TrimSpace(meta.AwayTeam) == "" {
-		issues = append(issues, "Away team is required.")
-	}
-	if strings.TrimSpace(meta.HomeTeam) == "" {
-		issues = append(issues, "Home team is required.")
-	}
-	if strings.TrimSpace(meta.GameDate) == "" {
-		issues = append(issues, "Game date is required.")
-	}
 	if ctx.Inning < 1 {
 		issues = append(issues, "Inning must be 1 or higher.")
 	}
