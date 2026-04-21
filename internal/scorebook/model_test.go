@@ -120,6 +120,48 @@ func TestHydratePitcherMemory(t *testing.T) {
 	}
 }
 
+func TestCountPitchesIgnoresNonCountingCodes(t *testing.T) {
+	tests := []struct {
+		name    string
+		pitches string
+		want    int
+	}{
+		{"empty", "", 0},
+		{"counts regular pitches", "CBFX", 4},
+		{"ignores excluded codes", "+*.123>ANV", 0},
+		{"mixed sequence", "C+BVNFX", 4},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := CountPitches(tt.pitches); got != tt.want {
+				t.Fatalf("CountPitches(%q) = %d, want %d", tt.pitches, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestPitchCountForPitcherUsesCurrentDraftAndSkipsEditedEntry(t *testing.T) {
+	book := Book{
+		Entries: []EventEntry{
+			{ID: "top-1", Pitcher: "45S", Pitches: "CB+"},
+			{ID: "top-2", Pitcher: "45S", Pitches: "ANV"},
+			{ID: "top-3", Pitcher: "12K", Pitches: "CBF"},
+			{ID: "top-4", Pitcher: "45S", Pitches: "FX"},
+		},
+	}
+
+	if got := book.PitchCountForPitcher("45S", "", "BV"); got != 5 {
+		t.Fatalf("pitch count for 45S = %d, want 5", got)
+	}
+	if got := book.PitchCountForPitcher("45S", "top-4", "BV"); got != 3 {
+		t.Fatalf("pitch count for edited 45S entry = %d, want 3", got)
+	}
+	if got := book.PitchCountForPitcher("", "", "BV"); got != 0 {
+		t.Fatalf("pitch count for blank pitcher = %d, want 0", got)
+	}
+}
+
 func TestRecordPlateAppearanceLearnsBattingOrderByTeam(t *testing.T) {
 	book := NewBook()
 

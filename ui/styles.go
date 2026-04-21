@@ -175,7 +175,7 @@ button, a, input, textarea, summary {
   width: max-content;
 }
 .context-band-top {
-  grid-template-columns: 74px 58px 58px;
+  grid-template-columns: 74px 58px 58px auto;
 }
 .context-band-bottom {
   grid-template-columns: 74px;
@@ -198,6 +198,14 @@ button, a, input, textarea, summary {
 .context-pitcher .input {
   width: 100%;
   max-width: 58px;
+}
+.context-pitch-count {
+  display: flex;
+  align-items: center;
+  min-height: 35px;
+  padding: 0 4px;
+  color: var(--muted);
+  white-space: nowrap;
 }
 .context-batting-row {
   display: grid;
@@ -619,8 +627,8 @@ button, a, input, textarea, summary {
   }
   .context-layout {
     display: grid;
-    grid-template-columns: 58px minmax(0, 1fr) 74px 58px 58px;
-    grid-template-areas: "batting . actions inning pitcher";
+    grid-template-columns: 58px minmax(0, 1fr) 74px 58px 58px auto;
+    grid-template-areas: "batting . actions inning pitcher count";
     gap: 4px;
     align-items: end;
   }
@@ -651,6 +659,10 @@ button, a, input, textarea, summary {
     grid-area: pitcher;
     width: 58px;
     max-width: 58px;
+  }
+  .context-pitch-count {
+    grid-area: count;
+    justify-self: start;
   }
   .context-pitcher .input {
     width: 58px;

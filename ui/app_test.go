@@ -60,6 +60,24 @@ func TestCountBallsStrikes(t *testing.T) {
 	}
 }
 
+func TestPitchCountLabelUsesCurrentPitcherAndDraft(t *testing.T) {
+	r := &Root{
+		book: scorebook.Book{
+			Context: scorebook.GameContext{Pitcher: "45S"},
+			Entries: []scorebook.EventEntry{
+				{ID: "top-1", Pitcher: "45S", Pitches: "CB+"},
+				{ID: "top-2", Pitcher: "12K", Pitches: "CBF"},
+				{ID: "top-3", Pitcher: "45S", Pitches: "FX"},
+			},
+		},
+		draft: scorebook.EventDraft{EditingID: "top-3", Pitches: "BV"},
+	}
+
+	if got := r.pitchCountLabel(); got != "P: 3" {
+		t.Fatalf("pitchCountLabel() = %q, want %q", got, "P: 3")
+	}
+}
+
 func TestSortLeadRunnerFirstAdvances(t *testing.T) {
 	tests := []struct {
 		name  string

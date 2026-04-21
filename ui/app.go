@@ -128,6 +128,7 @@ func (r *Root) renderContext() app.UI {
 						OnInput(r.bindString(&r.book.Context.Pitcher, "pitcher")).
 						OnFocus(r.setFocus("pitcher")),
 				),
+				app.Div().Class("context-pitch-count").Text(r.pitchCountLabel()),
 			),
 			app.Div().Class("context-band context-band-bottom").Body(
 				app.Div().Class("field context-batting").Body(
@@ -139,6 +140,11 @@ func (r *Root) renderContext() app.UI {
 			),
 		),
 	)
+}
+
+func (r *Root) pitchCountLabel() string {
+	count := r.book.PitchCountForPitcher(r.book.Context.Pitcher, r.draft.EditingID, r.draft.Pitches)
+	return fmt.Sprintf("P: %d", count)
 }
 
 func (r *Root) renderEntry() app.UI {

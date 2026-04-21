@@ -193,6 +193,39 @@ func (b Book) BattingPositionForEntry(id string) int {
 	return b.BattingPosition()
 }
 
+func CountPitches(pitches string) int {
+	count := 0
+	for _, pitch := range strings.TrimSpace(pitches) {
+		switch pitch {
+		case '+', '*', '.', '1', '2', '3', '>', 'A', 'N', 'V':
+			continue
+		default:
+			count++
+		}
+	}
+	return count
+}
+
+func (b Book) PitchCountForPitcher(pitcher, editingID, currentPitches string) int {
+	pitcher = strings.TrimSpace(pitcher)
+	if pitcher == "" {
+		return 0
+	}
+
+	count := 0
+	for _, entry := range b.Entries {
+		if entry.ID == editingID {
+			continue
+		}
+		if strings.TrimSpace(entry.Pitcher) != pitcher {
+			continue
+		}
+		count += CountPitches(entry.Pitches)
+	}
+
+	return count + CountPitches(currentPitches)
+}
+
 func (b *Book) RecordPlateAppearance(entry EventEntry) {
 	if entry.Mode != ModePlay {
 		return
