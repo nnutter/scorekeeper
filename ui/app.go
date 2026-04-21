@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/maxence-charriere/go-app/v10/pkg/app"
 	"github.com/nnutter/scorekeeper/internal/scorebook"
@@ -22,6 +23,7 @@ type Root struct {
 	hasLoaded   bool
 	hasEditBase bool
 	messageKind string
+	messageID   int
 	formVersion int
 	mobileKeys  string
 }
@@ -166,14 +168,24 @@ func (r *Root) renderEntry() app.UI {
 	)
 }
 
-func (r *Root) statusMessage(text string) {
+func (r *Root) statusMessage(ctx app.Context, text string) {
 	r.message = text
 	r.messageKind = "status"
+	r.messageID++
+	messageID := r.messageID
+	ctx.After(2*time.Second, func(ctx app.Context) {
+		if r.messageKind != "status" || r.messageID != messageID {
+			return
+		}
+		r.clearMessage()
+		ctx.Update()
+	})
 }
 
 func (r *Root) errorMessage(text string) {
 	r.message = text
 	r.messageKind = "error"
+	r.messageID++
 }
 
 func (r *Root) renderEntryFields() []app.UI {
@@ -607,10 +619,10 @@ func (r *Root) saveEntry(ctx app.Context, _ app.Event) {
 				break
 			}
 		}
-		r.statusMessage("Event updated.")
+		r.statusMessage(ctx, "Event updated.")
 	} else {
 		r.book.Entries = append(r.book.Entries, entry)
-		r.statusMessage("Event saved.")
+		r.statusMessage(ctx, "Event saved.")
 	}
 	r.book.HydrateMemory()
 	if wasEditing {
@@ -651,7 +663,7 @@ func (r *Root) cancelEdit(ctx app.Context, _ app.Event) {
 	r.restoreEditContext()
 	r.draft.Reset()
 	r.syncDraftBatter(true)
-	r.statusMessage("Edit canceled.")
+	r.statusMessage(ctx, "Edit canceled.")
 	r.formVersion++
 	r.persist()
 	clearEntryFields(false, false)
@@ -676,7 +688,7 @@ func (r *Root) editEntry(id string) app.EventHandler {
 					r.editBatter = r.book.BattingPositionForEntry(entry.ID)
 				}
 				r.draft.LoadFromEntry(entry)
-				r.statusMessage("Editing event.")
+				r.statusMessage(ctx, "Editing event.")
 				r.formVersion++
 				r.persist()
 				ctx.Update()
@@ -704,7 +716,7 @@ func (r *Root) deleteEntry(id string) app.EventHandler {
 		} else if r.draft.EditingID == "" {
 			r.syncDraftBatter(false)
 		}
-		r.statusMessage("Event deleted.")
+		r.statusMessage(ctx, "Event deleted.")
 		r.persist()
 		ctx.Update()
 	}
@@ -998,7 +1010,7 @@ func (r *Root) copyExport(ctx app.Context, _ app.Event) {
 	if err := copyText(scorebook.ExportText(r.book)); err != nil {
 		r.errorMessage("Clipboard copy is unavailable here.")
 	} else {
-		r.statusMessage("Export copied.")
+		r.statusMessage(ctx, "Export copied.")
 	}
 	ctx.Update()
 }
@@ -1051,7 +1063,7 @@ func (r *Root) newGame(ctx app.Context, _ app.Event) {
 	r.draft.Reset()
 	r.syncDraftBatter(true)
 	r.focused = ""
-	r.statusMessage("New game started.")
+	r.statusMessage(ctx, "New game started.")
 	r.formVersion++
 	r.persist()
 	ctx.Reload()
