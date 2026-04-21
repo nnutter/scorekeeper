@@ -175,10 +175,10 @@ button, a, input, textarea, summary {
   width: max-content;
 }
 .context-band-top {
-  grid-template-columns: 74px 58px;
+  grid-template-columns: 74px 58px 58px;
 }
 .context-band-bottom {
-  grid-template-columns: 74px 58px;
+  grid-template-columns: 74px;
 }
 .context-actions {
   width: 100%;
@@ -619,8 +619,8 @@ button, a, input, textarea, summary {
   }
   .context-layout {
     display: grid;
-    grid-template-columns: 58px 74px minmax(0, 1fr) 74px 58px;
-    grid-template-areas: "pitcher batting . actions inning";
+    grid-template-columns: 58px minmax(0, 1fr) 74px 58px 58px;
+    grid-template-areas: "batting . actions inning pitcher";
     gap: 4px;
     align-items: end;
   }
