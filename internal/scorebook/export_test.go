@@ -52,10 +52,10 @@ func TestExportTextIncludesNotes(t *testing.T) {
 	export := ExportText(book)
 	checks := []string{
 		"game,2026-04-01,away=Away Club,home=Home Club",
-		"play,1,top,pitcher=45S,batter=12J,pitches=CBX,event=S7,adv=1-3",
-		"play,1,top,pitcher=45S,batter=13K,event=K+SB2",
-		"note,1,top,\"lined into left\"",
-		"run,1,top,pitcher=45S,batter=12J,event=SB2",
+		"play,1,▲,pitcher=45S,batter=12J,pitches=CBX,event=S7,adv=1-3",
+		"play,1,▲,pitcher=45S,batter=13K,event=K+SB2",
+		"note,1,▲,\"lined into left\"",
+		"run,1,▲,pitcher=45S,batter=12J,event=SB2",
 	}
 	for _, check := range checks {
 		if !strings.Contains(export, check) {
