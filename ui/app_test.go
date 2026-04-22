@@ -248,11 +248,11 @@ func TestStepBatterWrapsWhileEditing(t *testing.T) {
 	}
 
 	r.stepBatter(-1)
-	if r.editBatter != 9 {
-		t.Fatalf("edit batter position after wrap = %d, want 9", r.editBatter)
+	if r.editBatter != 0 {
+		t.Fatalf("edit batter sequence after retreat = %d, want 0", r.editBatter)
 	}
-	if r.draft.Batter != "H9" {
-		t.Fatalf("editing batter after wrap = %q, want H9", r.draft.Batter)
+	if r.draft.Batter != "" {
+		t.Fatalf("editing batter after retreat = %q, want empty", r.draft.Batter)
 	}
 }
 
@@ -316,7 +316,24 @@ func TestSortedLogEntriesReordersEditedEntryWhenBattingPositionCollides(t *testi
 	}
 
 	sorted := sortedLogEntries(book)
-	want := []string{"top-2", "top-1"}
+	want := []string{"top-1", "top-2"}
+	for i, id := range want {
+		if sorted[i].ID != id {
+			t.Fatalf("sorted[%d] = %q, want %q", i, sorted[i].ID, id)
+		}
+	}
+}
+
+func TestSortedLogEntriesKeepsWrappedBattersInSequence(t *testing.T) {
+	book := scorebook.Book{
+		Entries: []scorebook.EventEntry{
+			{ID: "top-9", Inning: 1, Half: scorebook.Top, Mode: scorebook.ModePlay, Batter: "A9", BattingPos: 9},
+			{ID: "top-10", Inning: 1, Half: scorebook.Top, Mode: scorebook.ModePlay, Batter: "A1", BattingPos: 10},
+		},
+	}
+
+	sorted := sortedLogEntries(book)
+	want := []string{"top-9", "top-10"}
 	for i, id := range want {
 		if sorted[i].ID != id {
 			t.Fatalf("sorted[%d] = %q, want %q", i, sorted[i].ID, id)

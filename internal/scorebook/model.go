@@ -111,12 +111,12 @@ func (b *Book) RetreatHalf() {
 
 func (b *Book) AdvanceBattingPosition() {
 	_, spot := b.battingMemoryRef(b.Context.Half)
-	*spot = normalizeSpot(*spot + 1)
+	*spot = *spot + 1
 }
 
 func (b *Book) RetreatBattingPosition() {
 	_, spot := b.battingMemoryRef(b.Context.Half)
-	*spot = normalizeSpot(*spot - 1)
+	*spot = *spot - 1
 }
 
 func (b *Book) SyncPitcherMemory() {
@@ -167,10 +167,23 @@ func (b Book) rememberedPitcher(half Half) string {
 
 func (b Book) RememberedBatter() string {
 	order, spot := b.battingMemory(b.Context.Half)
+	spot = normalizeSpot(spot)
 	if spot < 0 || spot >= BattingSlots || spot >= len(order) {
 		return ""
 	}
 	return order[spot]
+}
+
+func (b Book) BattingSequence() int {
+	return b.battingSequence(b.Context.Half)
+}
+
+func (b Book) battingSequence(half Half) int {
+	_, spot := b.battingMemory(half)
+	if spot < 0 {
+		return normalizeSpot(spot) + 1
+	}
+	return spot + 1
 }
 
 func (b Book) BattingPosition() int {
@@ -178,19 +191,22 @@ func (b Book) BattingPosition() int {
 	return normalizeSpot(spot) + 1
 }
 
-func (b Book) BattingPositionForEntry(id string) int {
+func (b Book) BattingSequenceForEntry(id string) int {
 	replay := NewBook()
 	for _, entry := range b.Entries {
 		if entry.ID == id {
-			if entry.BattingPos >= 1 && entry.BattingPos <= BattingSlots {
+			if entry.BattingPos > 0 {
 				return entry.BattingPos
 			}
-			_, spot := replay.battingMemory(entry.Half)
-			return normalizeSpot(spot) + 1
+			return replay.battingSequence(entry.Half)
 		}
 		replay.RecordPlateAppearance(entry)
 	}
-	return b.BattingPosition()
+	return b.BattingSequence()
+}
+
+func (b Book) BattingPositionForEntry(id string) int {
+	return normalizeSpot(b.BattingSequenceForEntry(id)-1) + 1
 }
 
 func CountPitches(pitches string) int {
@@ -238,21 +254,28 @@ func (b *Book) RecordPlateAppearance(entry EventEntry) {
 
 	order, spot := b.battingMemoryRef(entry.Half)
 	*order = normalizeBattingOrder(*order)
-	if entry.BattingPos >= 1 && entry.BattingPos <= BattingSlots {
+	if entry.BattingPos > 0 {
 		position := entry.BattingPos - 1
-		(*order)[position] = batter
-		*spot = normalizeSpot(position + 1)
+		(*order)[normalizeSpot(position)] = batter
+		*spot = position + 1
 		return
 	}
-	currentSpot := normalizeSpot(*spot)
+	currentSpot := *spot
+	if currentSpot < 0 {
+		currentSpot = normalizeSpot(currentSpot)
+	}
 	index := indexOfBatter(*order, batter)
 	if index >= 0 {
-		*spot = normalizeSpot(index + 1)
+		position := currentSpot - normalizeSpot(currentSpot) + index
+		if position < currentSpot {
+			position += BattingSlots
+		}
+		*spot = position + 1
 		return
 	}
 
-	(*order)[currentSpot] = batter
-	*spot = normalizeSpot(currentSpot + 1)
+	(*order)[normalizeSpot(currentSpot)] = batter
+	*spot = currentSpot + 1
 }
 
 func (b Book) battingMemory(half Half) ([]string, int) {

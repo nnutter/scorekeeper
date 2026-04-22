@@ -45,11 +45,17 @@ func TestAdvanceBattingPositionWrapsWithinHalf(t *testing.T) {
 	if got := book.BattingPosition(); got != 2 {
 		t.Fatalf("batting position after advance = %d, want 2", got)
 	}
+	if got := book.BattingSequence(); got != 2 {
+		t.Fatalf("batting sequence after advance = %d, want 2", got)
+	}
 
 	book.AwaySpot = 8
 	book.AdvanceBattingPosition()
 	if got := book.BattingPosition(); got != 1 {
 		t.Fatalf("batting position after wrap = %d, want 1", got)
+	}
+	if got := book.BattingSequence(); got != 10 {
+		t.Fatalf("batting sequence after wrap = %d, want 10", got)
 	}
 
 	book.Context.Half = Bottom
@@ -256,6 +262,30 @@ func TestBattingPositionForEntryReturnsHistoricalSpot(t *testing.T) {
 	}
 }
 
+func TestBattingSequenceForEntryTracksWraps(t *testing.T) {
+	book := Book{
+		Entries: []EventEntry{
+			{ID: "top-1", Mode: ModePlay, Half: Top, Batter: "A1"},
+			{ID: "top-2", Mode: ModePlay, Half: Top, Batter: "A2"},
+			{ID: "top-3", Mode: ModePlay, Half: Top, Batter: "A3"},
+			{ID: "top-4", Mode: ModePlay, Half: Top, Batter: "A4"},
+			{ID: "top-5", Mode: ModePlay, Half: Top, Batter: "A5"},
+			{ID: "top-6", Mode: ModePlay, Half: Top, Batter: "A6"},
+			{ID: "top-7", Mode: ModePlay, Half: Top, Batter: "A7"},
+			{ID: "top-8", Mode: ModePlay, Half: Top, Batter: "A8"},
+			{ID: "top-9", Mode: ModePlay, Half: Top, Batter: "A9"},
+			{ID: "top-10", Mode: ModePlay, Half: Top, Batter: "A1"},
+		},
+	}
+
+	if got := book.BattingSequenceForEntry("top-10"); got != 10 {
+		t.Fatalf("top-10 batting sequence = %d, want 10", got)
+	}
+	if got := book.BattingPositionForEntry("top-10"); got != 1 {
+		t.Fatalf("top-10 batting position = %d, want 1", got)
+	}
+}
+
 func TestBattingPositionForEntryPrefersStoredPosition(t *testing.T) {
 	book := Book{
 		Entries: []EventEntry{
@@ -270,13 +300,16 @@ func TestBattingPositionForEntryPrefersStoredPosition(t *testing.T) {
 
 func TestRecordPlateAppearanceUsesStoredPosition(t *testing.T) {
 	book := NewBook()
-	book.RecordPlateAppearance(EventEntry{Mode: ModePlay, Half: Top, Batter: "A4", BattingPos: 4})
+	book.RecordPlateAppearance(EventEntry{Mode: ModePlay, Half: Top, Batter: "A1", BattingPos: 10})
 
-	if got := book.AwayOrder[3]; got != "A4" {
-		t.Fatalf("stored batter slotted at 4 = %q, want A4", got)
+	if got := book.AwayOrder[0]; got != "A1" {
+		t.Fatalf("stored batter slotted at 1 = %q, want A1", got)
 	}
-	if got := book.BattingPosition(); got != 5 {
-		t.Fatalf("next batting position after stored slot = %d, want 5", got)
+	if got := book.BattingSequence(); got != 11 {
+		t.Fatalf("next batting sequence after stored slot = %d, want 11", got)
+	}
+	if got := book.BattingPosition(); got != 2 {
+		t.Fatalf("next batting position after stored slot = %d, want 2", got)
 	}
 }
 

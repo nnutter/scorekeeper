@@ -244,8 +244,8 @@ func (r *Root) renderEntryFields() []app.UI {
 func (r *Root) batterLabel() string {
 	position := r.book.BattingPosition()
 	if r.draft.EditingID != "" {
-		position = r.editBatter
-		if position < 1 || position > scorebook.BattingSlots {
+		position = displayBattingPositionValue(r.editBatter)
+		if r.editBatter <= 0 {
 			position = r.book.BattingPositionForEntry(r.draft.EditingID)
 		}
 	}
@@ -453,7 +453,7 @@ func sortedLogEntries(book scorebook.Book) []scorebook.EventEntry {
 	legacyPositions := legacyBattingPositions(book.Entries)
 	currentPositions := make(map[string]int, len(book.Entries))
 	for _, entry := range book.Entries {
-		currentPositions[entry.ID] = displayBattingPosition(entry, legacyPositions)
+		currentPositions[entry.ID] = storedBattingPosition(entry, legacyPositions)
 	}
 	slices.SortStableFunc(sorted, func(a, b scorebook.EventEntry) int {
 		if a.Inning != b.Inning {
@@ -465,19 +465,16 @@ func sortedLogEntries(book scorebook.Book) []scorebook.EventEntry {
 		if currentPositions[a.ID] != currentPositions[b.ID] {
 			return currentPositions[a.ID] - currentPositions[b.ID]
 		}
-		if hasStoredBattingPosition(a) != hasStoredBattingPosition(b) && legacyPositions[a.ID] != legacyPositions[b.ID] {
-			return legacyPositions[b.ID] - legacyPositions[a.ID]
-		}
 		return 0
 	})
 	return sorted
 }
 
 func hasStoredBattingPosition(entry scorebook.EventEntry) bool {
-	return entry.BattingPos >= 1 && entry.BattingPos <= scorebook.BattingSlots
+	return entry.BattingPos > 0
 }
 
-func displayBattingPosition(entry scorebook.EventEntry, legacyPositions map[string]int) int {
+func storedBattingPosition(entry scorebook.EventEntry, legacyPositions map[string]int) int {
 	if hasStoredBattingPosition(entry) {
 		return entry.BattingPos
 	}
@@ -488,12 +485,23 @@ func legacyBattingPositions(entries []scorebook.EventEntry) map[string]int {
 	positions := make(map[string]int, len(entries))
 	replay := scorebook.NewBook()
 	for _, entry := range entries {
-		positions[entry.ID] = replay.BattingPosition()
+		positions[entry.ID] = replay.BattingSequence()
 		legacyEntry := entry
 		legacyEntry.BattingPos = 0
 		replay.RecordPlateAppearance(legacyEntry)
 	}
 	return positions
+}
+
+func displayBattingPositionValue(position int) int {
+	if position <= 0 {
+		return 0
+	}
+	position = (position - 1) % scorebook.BattingSlots
+	if position < 0 {
+		position += scorebook.BattingSlots
+	}
+	return position + 1
 }
 
 func halfSortRank(half scorebook.Half) int {
@@ -700,8 +708,8 @@ func (r *Root) editEntry(id string) app.EventHandler {
 					Pitcher: entry.Pitcher,
 				}
 				r.editBatter = entry.BattingPos
-				if r.editBatter < 1 || r.editBatter > scorebook.BattingSlots {
-					r.editBatter = r.book.BattingPositionForEntry(entry.ID)
+				if r.editBatter <= 0 {
+					r.editBatter = r.book.BattingSequenceForEntry(entry.ID)
 				}
 				r.draft.LoadFromEntry(entry)
 				r.statusMessage(ctx, "Editing event.")
@@ -758,10 +766,10 @@ func (r *Root) resetEntryDraftForContextChange() {
 
 func (r *Root) stepBatter(delta int) {
 	if r.draft.EditingID != "" {
-		if r.editBatter < 1 || r.editBatter > scorebook.BattingSlots {
-			r.editBatter = r.book.BattingPositionForEntry(r.draft.EditingID)
+		if r.editBatter <= 0 {
+			r.editBatter = r.book.BattingSequenceForEntry(r.draft.EditingID)
 		}
-		r.editBatter = wrapBattingPosition(r.editBatter + delta)
+		r.editBatter += delta
 		r.syncEditingDraftBatter()
 		return
 	}
@@ -774,18 +782,10 @@ func (r *Root) stepBatter(delta int) {
 }
 
 func (r *Root) currentEntryBattingPosition() int {
-	if r.draft.EditingID != "" && r.editBatter >= 1 && r.editBatter <= scorebook.BattingSlots {
+	if r.draft.EditingID != "" && r.editBatter > 0 {
 		return r.editBatter
 	}
-	return r.book.BattingPosition()
-}
-
-func wrapBattingPosition(position int) int {
-	position = (position - 1) % scorebook.BattingSlots
-	if position < 0 {
-		position += scorebook.BattingSlots
-	}
-	return position + 1
+	return r.book.BattingSequence()
 }
 
 func (r *Root) syncEditingDraftBatter() {
@@ -793,7 +793,7 @@ func (r *Root) syncEditingDraftBatter() {
 }
 
 func (r *Root) rememberedBatterAt(half scorebook.Half, position int) string {
-	if position < 1 || position > scorebook.BattingSlots {
+	if position <= 0 {
 		return ""
 	}
 	var order []string
@@ -802,7 +802,7 @@ func (r *Root) rememberedBatterAt(half scorebook.Half, position int) string {
 	} else {
 		order = r.book.AwayOrder
 	}
-	index := position - 1
+	index := displayBattingPositionValue(position) - 1
 	if index >= len(order) {
 		return ""
 	}
