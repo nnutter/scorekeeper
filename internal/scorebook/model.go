@@ -75,7 +75,7 @@ type Book struct {
 
 func NewBook() Book {
 	return Book{
-		Meta: normalizedMeta(GameMeta{}),
+		Meta: normalizedMeta(GameMeta{GameDate: time.Now().Format("2006-01-02")}),
 		Context: GameContext{
 			Inning: 1,
 			Half:   Top,
