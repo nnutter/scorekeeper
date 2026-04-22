@@ -28,6 +28,46 @@ type Root struct {
 	mobileKeys  string
 }
 
+type logEntryRow struct {
+	app.Compo
+
+	Entry     scorebook.EventEntry
+	EventText string
+	OnEdit    app.EventHandler
+	OnDelete  app.EventHandler
+}
+
+func (r *logEntryRow) CompoID() string {
+	return r.Entry.ID
+}
+
+func (r *logEntryRow) Render() app.UI {
+	children := []app.UI{
+		app.Div().Class("log-row").Body(
+			app.Span().Text(shortContext(r.Entry)),
+			app.Span().Text(r.Entry.Pitcher),
+			app.Span().Text(r.Entry.Batter),
+			app.Span().Text(orDash(r.Entry.Pitches)),
+			app.Span().Text(r.EventText),
+			app.Div().Class("log-actions").Body(
+				app.Button().Class("btn icon-btn").Attr("aria-label", "Edit event").Attr("title", "Edit event").Body(
+					app.Img().Src("/web/icon-edit.svg").Alt(""),
+				).OnClick(r.OnEdit),
+				app.Button().Class("btn danger icon-btn").Attr("aria-label", "Delete event").Attr("title", "Delete event").Body(
+					app.Img().Src("/web/icon-delete.svg").Alt(""),
+				).OnClick(r.OnDelete),
+			),
+		),
+	}
+	if strings.TrimSpace(r.Entry.Note) != "" {
+		children = append(children, app.Div().Class("log-note-row").Body(
+			app.Span().Class("log-note-label"),
+			app.Span().Class("log-note").Text(r.Entry.Note),
+		))
+	}
+	return app.Div().ID("log-entry-" + r.Entry.ID).DataSet("entry-id", r.Entry.ID).Class("log-entry").Body(children...)
+}
+
 func New() *Root {
 	r := &Root{mobileKeys: "pitches"}
 	r.book = scorebook.NewBook()
@@ -380,7 +420,12 @@ func (r *Root) renderLog() app.UI {
 	entries := sortedLogEntries(r.book)
 	rows := make([]app.UI, 0, len(entries))
 	for _, entry := range entries {
-		rows = append(rows, r.renderLogEntry(entry))
+		rows = append(rows, &logEntryRow{
+			Entry:     entry,
+			EventText: r.logEventText(entry),
+			OnEdit:    r.editEntry(entry.ID),
+			OnDelete:  r.deleteEntry(entry.ID),
+		})
 	}
 	if len(rows) == 0 {
 		rows = append(rows, app.Div().Class("log-empty").Text("No events yet."))
@@ -456,35 +501,6 @@ func halfSortRank(half scorebook.Half) int {
 		return 0
 	}
 	return 1
-}
-
-func (r *Root) renderLogEntry(entry scorebook.EventEntry) app.UI {
-	children := []app.UI{
-		app.Div().Class("log-row").Body(
-			app.Span().Text(shortContext(entry)),
-			app.Span().Text(entry.Pitcher),
-			app.Span().Text(entry.Batter),
-			app.Span().Text(orDash(entry.Pitches)),
-			app.Span().Text(r.logEventText(entry)),
-			app.Div().Class("log-actions").Body(
-				app.Button().Class("btn icon-btn").Attr("aria-label", "Edit event").Attr("title", "Edit event").Body(
-					app.Img().Src("/web/icon-edit.svg").Alt(""),
-				).OnClick(r.editEntry(entry.ID)),
-				app.Button().Class("btn danger icon-btn").Attr("aria-label", "Delete event").Attr("title", "Delete event").Body(
-					app.Img().Src("/web/icon-delete.svg").Alt(""),
-				).OnClick(r.deleteEntry(entry.ID)),
-			),
-		),
-	}
-	if strings.TrimSpace(entry.Note) != "" {
-		children = append(children, app.Div().Class("log-note-row").Body(
-			app.Span().Class("log-note-label"),
-			app.Span().Class("log-note").Text(entry.Note),
-		))
-	}
-	return app.Div().Class("log-entry").Body(
-		children...,
-	)
 }
 
 func (r *Root) textField(label string, target *string, focusKey, placeholder string) app.UI {
