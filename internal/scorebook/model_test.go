@@ -313,6 +313,22 @@ func TestRecordPlateAppearanceUsesStoredPosition(t *testing.T) {
 	}
 }
 
+func TestBattingPositionUsesConfiguredSlots(t *testing.T) {
+	book := NewBook()
+	book.Meta.AwaySlots = 12
+	book.HydrateBattingMemory()
+	book.AwaySpot = 11
+
+	if got := book.BattingPosition(); got != 12 {
+		t.Fatalf("batting position with 12 slots = %d, want 12", got)
+	}
+
+	book.AdvanceBattingPosition()
+	if got := book.BattingPosition(); got != 1 {
+		t.Fatalf("wrapped batting position with 12 slots = %d, want 1", got)
+	}
+}
+
 func TestEventDraftToEntryTrimsValues(t *testing.T) {
 	draft := EventDraft{
 		Batter:      " 12J ",

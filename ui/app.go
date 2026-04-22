@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -116,11 +117,14 @@ func (r *Root) pageClass() string {
 func (r *Root) renderGameInfo(exportText string) app.UI {
 	return app.Section().Class("panel").Body(
 		app.Div().Class("game-info-layout").Body(
-			app.Div().Class("field game-away").Body(
-				app.Label().Class("field-label").Text("Away Team"),
-				app.Input().ID(r.fieldID("away-team")).Class("input").Type("text").Value(r.book.Meta.AwayTeam).Placeholder("Away Team").
-					OnInput(r.bindString(&r.book.Meta.AwayTeam, "away-team")).
-					OnFocus(r.setFocus("away-team")),
+			app.Div().Class("game-team-group game-away").Body(
+				app.Div().Class("field").Body(
+					app.Label().Class("field-label").Text("Away Team"),
+					app.Input().ID(r.fieldID("away-team")).Class("input").Type("text").Value(r.book.Meta.AwayTeam).Placeholder("Away Team").
+						OnInput(r.bindString(&r.book.Meta.AwayTeam, "away-team")).
+						OnFocus(r.setFocus("away-team")),
+				),
+				r.numberField("#", &r.book.Meta.AwaySlots, "away-slots"),
 			),
 			app.Div().Class("field game-date").Body(
 				app.Label().Class("field-label").Text("Game Date"),
@@ -128,11 +132,14 @@ func (r *Root) renderGameInfo(exportText string) app.UI {
 					OnInput(r.bindString(&r.book.Meta.GameDate, "game-date")).
 					OnFocus(r.setFocus("game-date")),
 			),
-			app.Div().Class("field game-home").Body(
-				app.Label().Class("field-label").Text("Home Team"),
-				app.Input().ID(r.fieldID("home-team")).Class("input").Type("text").Value(r.book.Meta.HomeTeam).Placeholder("Home Team").
-					OnInput(r.bindString(&r.book.Meta.HomeTeam, "home-team")).
-					OnFocus(r.setFocus("home-team")),
+			app.Div().Class("game-team-group game-home").Body(
+				app.Div().Class("field").Body(
+					app.Label().Class("field-label").Text("Home Team"),
+					app.Input().ID(r.fieldID("home-team")).Class("input").Type("text").Value(r.book.Meta.HomeTeam).Placeholder("Home Team").
+						OnInput(r.bindString(&r.book.Meta.HomeTeam, "home-team")).
+						OnFocus(r.setFocus("home-team")),
+				),
+				r.numberField("#", &r.book.Meta.HomeSlots, "home-slots"),
 			),
 			r.iconButton("btn danger game-new", "/web/icon-clear-all.svg", "New Game").OnClick(r.newGame),
 			r.iconButton("btn game-copy", "/web/icon-copy.svg", "Copy").OnClick(r.copyExport),
@@ -244,7 +251,7 @@ func (r *Root) renderEntryFields() []app.UI {
 func (r *Root) batterLabel() string {
 	position := r.book.BattingPosition()
 	if r.draft.EditingID != "" {
-		position = displayBattingPositionValue(r.editBatter)
+		position = displayBattingPositionValue(r.editBatter, r.book.BattingSlots())
 		if r.editBatter <= 0 {
 			position = r.book.BattingPositionForEntry(r.draft.EditingID)
 		}
@@ -493,13 +500,16 @@ func legacyBattingPositions(entries []scorebook.EventEntry) map[string]int {
 	return positions
 }
 
-func displayBattingPositionValue(position int) int {
+func displayBattingPositionValue(position, slots int) int {
 	if position <= 0 {
 		return 0
 	}
-	position = (position - 1) % scorebook.BattingSlots
+	if slots < 1 {
+		slots = scorebook.DefaultBattingSlots
+	}
+	position = (position - 1) % slots
 	if position < 0 {
-		position += scorebook.BattingSlots
+		position += slots
 	}
 	return position + 1
 }
@@ -536,6 +546,15 @@ func (r *Root) textAreaField(label string, target *string, focusKey, placeholder
 	)
 }
 
+func (r *Root) numberField(label string, target *int, focusKey string) app.UI {
+	return app.Div().Class("field game-slots game-"+focusKey).Body(
+		app.Label().Class("field-label").Text(label),
+		app.Input().ID(r.fieldID(focusKey)).Class("input").Type("number").Attr("min", "1").Attr("step", "1").Value(strconv.Itoa(*target)).
+			OnInput(r.bindBattingSlots(target, focusKey)).
+			OnFocus(r.setFocus(focusKey)),
+	)
+}
+
 func (r *Root) iconButton(className, src, label string) app.HTMLButton {
 	return app.Button().Class(className+" action-icon-btn").Attr("aria-label", label).Attr("title", label).Body(
 		app.Img().Class("action-icon").Src(src).Alt(""),
@@ -565,6 +584,28 @@ func (r *Root) bindString(target *string, focusKey string) app.EventHandler {
 		if r.messageKind == "error" {
 			r.clearMessage()
 		}
+		r.persist()
+		ctx.Update()
+	}
+}
+
+func (r *Root) bindBattingSlots(target *int, focusKey string) app.EventHandler {
+	return func(ctx app.Context, e app.Event) {
+		value := strings.TrimSpace(ctx.JSSrc().Get("value").String())
+		slots := scorebook.DefaultBattingSlots
+		if value != "" {
+			if parsed, err := strconv.Atoi(value); err == nil && parsed > 0 {
+				slots = parsed
+			}
+		}
+		*target = slots
+		r.book.HydrateBattingMemory()
+		if r.draft.EditingID != "" {
+			r.syncEditingDraftBatter()
+		} else {
+			r.syncDraftBatter(false)
+		}
+		r.focused = focusKey
 		r.persist()
 		ctx.Update()
 	}
@@ -802,7 +843,7 @@ func (r *Root) rememberedBatterAt(half scorebook.Half, position int) string {
 	} else {
 		order = r.book.AwayOrder
 	}
-	index := displayBattingPositionValue(position) - 1
+	index := displayBattingPositionValue(position, len(order)) - 1
 	if index >= len(order) {
 		return ""
 	}

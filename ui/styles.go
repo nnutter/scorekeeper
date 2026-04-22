@@ -107,12 +107,39 @@ button, a, input, textarea, summary {
 .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .game-info-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 144px minmax(0, 1fr) auto auto auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto auto auto;
   gap: 8px;
   align-items: end;
   grid-template-areas: "away date home new copy email";
 }
 .game-away { grid-area: away; }
+.game-team-group {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 38px);
+  gap: 4px;
+  align-items: end;
+  min-width: 0;
+}
+.game-team-group > .field,
+.game-team-group > .game-slots {
+  min-width: 0;
+}
+.game-slots {
+  width: 100%;
+  min-width: 0;
+}
+.game-slots .input {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.game-slots .input {
+  text-align: center;
+}
+.game-slots .field-label {
+  text-align: center;
+  min-width: 0;
+  font-size: 0.72rem;
+}
 .game-date { grid-area: date; }
 .game-home { grid-area: home; }
 .game-new { grid-area: new; }
@@ -602,7 +629,7 @@ button, a, input, textarea, summary {
   .game-away,
   .game-date,
   .game-home {
-    width: 90%;
+    width: 75%;
     justify-self: start;
   }
   .game-info-layout input[type="date"].input {

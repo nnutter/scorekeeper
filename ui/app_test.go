@@ -179,8 +179,9 @@ func TestHandleHalfChangePreservesEditDraft(t *testing.T) {
 func TestHandleHalfChangeResetsNewEntryDraft(t *testing.T) {
 	r := &Root{
 		book: scorebook.Book{
-			AwayOrder: make([]string, scorebook.BattingSlots),
-			HomeOrder: make([]string, scorebook.BattingSlots),
+			Meta:      scorebook.GameMeta{AwaySlots: scorebook.DefaultBattingSlots, HomeSlots: scorebook.DefaultBattingSlots},
+			AwayOrder: make([]string, scorebook.DefaultBattingSlots),
+			HomeOrder: make([]string, scorebook.DefaultBattingSlots),
 		},
 		draft: scorebook.EventDraft{
 			Batter:      "12J",
@@ -338,5 +339,18 @@ func TestSortedLogEntriesKeepsWrappedBattersInSequence(t *testing.T) {
 		if sorted[i].ID != id {
 			t.Fatalf("sorted[%d] = %q, want %q", i, sorted[i].ID, id)
 		}
+	}
+}
+
+func TestRememberedBatterAtUsesConfiguredSlots(t *testing.T) {
+	r := &Root{
+		book: scorebook.Book{
+			Meta:      scorebook.GameMeta{AwaySlots: 12, HomeSlots: 9},
+			AwayOrder: []string{"A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12"},
+		},
+	}
+
+	if got := r.rememberedBatterAt(scorebook.Top, 13); got != "A1" {
+		t.Fatalf("remembered batter at wrapped 13th slot = %q, want A1", got)
 	}
 }

@@ -11,7 +11,7 @@ type Half string
 const (
 	Top          Half = "▲"
 	Bottom       Half = "▼"
-	BattingSlots      = 9
+	DefaultBattingSlots = 9
 )
 
 type EntryMode string
@@ -22,9 +22,11 @@ const (
 )
 
 type GameMeta struct {
-	AwayTeam string `json:"awayTeam"`
-	HomeTeam string `json:"homeTeam"`
-	GameDate string `json:"gameDate"`
+	AwayTeam  string `json:"awayTeam"`
+	AwaySlots int    `json:"awaySlots,omitempty"`
+	HomeTeam  string `json:"homeTeam"`
+	HomeSlots int    `json:"homeSlots,omitempty"`
+	GameDate  string `json:"gameDate"`
 }
 
 type GameContext struct {
@@ -73,12 +75,13 @@ type Book struct {
 
 func NewBook() Book {
 	return Book{
+		Meta: normalizedMeta(GameMeta{}),
 		Context: GameContext{
 			Inning: 1,
 			Half:   Top,
 		},
-		AwayOrder: makeBattingOrder(),
-		HomeOrder: makeBattingOrder(),
+		AwayOrder: makeBattingOrder(DefaultBattingSlots),
+		HomeOrder: makeBattingOrder(DefaultBattingSlots),
 		Entries:   []EventEntry{},
 	}
 }
@@ -143,8 +146,9 @@ func (b *Book) HydratePitcherMemory() {
 }
 
 func (b *Book) HydrateBattingMemory() {
-	b.AwayOrder = makeBattingOrder()
-	b.HomeOrder = makeBattingOrder()
+	b.Meta = normalizedMeta(b.Meta)
+	b.AwayOrder = makeBattingOrder(b.Meta.AwaySlots)
+	b.HomeOrder = makeBattingOrder(b.Meta.HomeSlots)
 	b.AwaySpot = 0
 	b.HomeSpot = 0
 
@@ -167,8 +171,8 @@ func (b Book) rememberedPitcher(half Half) string {
 
 func (b Book) RememberedBatter() string {
 	order, spot := b.battingMemory(b.Context.Half)
-	spot = normalizeSpot(spot)
-	if spot < 0 || spot >= BattingSlots || spot >= len(order) {
+	spot = normalizeSpot(spot, len(order))
+	if spot < 0 || spot >= len(order) {
 		return ""
 	}
 	return order[spot]
@@ -181,14 +185,14 @@ func (b Book) BattingSequence() int {
 func (b Book) battingSequence(half Half) int {
 	_, spot := b.battingMemory(half)
 	if spot < 0 {
-		return normalizeSpot(spot) + 1
+		return normalizeSpot(spot, b.battingSlots(half)) + 1
 	}
 	return spot + 1
 }
 
 func (b Book) BattingPosition() int {
 	_, spot := b.battingMemory(b.Context.Half)
-	return normalizeSpot(spot) + 1
+	return normalizeSpot(spot, b.battingSlots(b.Context.Half)) + 1
 }
 
 func (b Book) BattingSequenceForEntry(id string) int {
@@ -206,7 +210,12 @@ func (b Book) BattingSequenceForEntry(id string) int {
 }
 
 func (b Book) BattingPositionForEntry(id string) int {
-	return normalizeSpot(b.BattingSequenceForEntry(id)-1) + 1
+	for _, entry := range b.Entries {
+		if entry.ID == id {
+			return normalizeSpot(b.BattingSequenceForEntry(id)-1, b.battingSlots(entry.Half)) + 1
+		}
+	}
+	return normalizeSpot(b.BattingSequenceForEntry(id)-1, b.battingSlots(b.Context.Half)) + 1
 }
 
 func CountPitches(pitches string) int {
@@ -253,29 +262,45 @@ func (b *Book) RecordPlateAppearance(entry EventEntry) {
 	}
 
 	order, spot := b.battingMemoryRef(entry.Half)
-	*order = normalizeBattingOrder(*order)
+	*order = normalizeBattingOrder(*order, b.battingSlots(entry.Half))
+	slots := len(*order)
 	if entry.BattingPos > 0 {
 		position := entry.BattingPos - 1
-		(*order)[normalizeSpot(position)] = batter
+		(*order)[normalizeSpot(position, slots)] = batter
 		*spot = position + 1
 		return
 	}
 	currentSpot := *spot
 	if currentSpot < 0 {
-		currentSpot = normalizeSpot(currentSpot)
+		currentSpot = normalizeSpot(currentSpot, slots)
 	}
 	index := indexOfBatter(*order, batter)
 	if index >= 0 {
-		position := currentSpot - normalizeSpot(currentSpot) + index
+		position := currentSpot - normalizeSpot(currentSpot, slots) + index
 		if position < currentSpot {
-			position += BattingSlots
+			position += slots
 		}
 		*spot = position + 1
 		return
 	}
 
-	(*order)[normalizeSpot(currentSpot)] = batter
+	(*order)[normalizeSpot(currentSpot, slots)] = batter
 	*spot = currentSpot + 1
+}
+
+func (b Book) battingSlots(half Half) int {
+	if half == Bottom {
+		return normalizeBattingSlots(b.Meta.HomeSlots)
+	}
+	return normalizeBattingSlots(b.Meta.AwaySlots)
+}
+
+func (b Book) BattingSlots() int {
+	return b.battingSlots(b.Context.Half)
+}
+
+func (b Book) BattingSlotsForHalf(half Half) int {
+	return b.battingSlots(half)
 }
 
 func (b Book) battingMemory(half Half) ([]string, int) {
@@ -301,26 +326,41 @@ func indexOfBatter(order []string, batter string) int {
 	return -1
 }
 
-func makeBattingOrder() []string {
-	return make([]string, BattingSlots)
+func makeBattingOrder(slots int) []string {
+	return make([]string, normalizeBattingSlots(slots))
 }
 
-func normalizeBattingOrder(order []string) []string {
-	if len(order) == BattingSlots {
+func normalizeBattingOrder(order []string, slots int) []string {
+	slots = normalizeBattingSlots(slots)
+	if len(order) == slots {
 		return order
 	}
-	normalized := makeBattingOrder()
+	normalized := makeBattingOrder(slots)
 	copy(normalized, order)
 	return normalized
 }
 
-func normalizeSpot(spot int) int {
-	if BattingSlots == 0 {
+func normalizeBattingSlots(slots int) int {
+	if slots < 1 {
+		return DefaultBattingSlots
+	}
+	return slots
+}
+
+func normalizedMeta(meta GameMeta) GameMeta {
+	meta.AwaySlots = normalizeBattingSlots(meta.AwaySlots)
+	meta.HomeSlots = normalizeBattingSlots(meta.HomeSlots)
+	return meta
+}
+
+func normalizeSpot(spot, slots int) int {
+	slots = normalizeBattingSlots(slots)
+	if slots == 0 {
 		return 0
 	}
-	spot %= BattingSlots
+	spot %= slots
 	if spot < 0 {
-		spot += BattingSlots
+		spot += slots
 	}
 	return spot
 }
