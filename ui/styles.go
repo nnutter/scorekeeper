@@ -466,7 +466,7 @@ button, a, input, textarea, summary {
 }
 .log-row {
   display: grid;
-  grid-template-columns: 56px 56px 70px 84px minmax(0, 1.4fr) 110px;
+  grid-template-columns: 55px 65px 65px 85px minmax(0, 1.4fr) 110px;
   gap: 6px;
   align-items: center;
 }
